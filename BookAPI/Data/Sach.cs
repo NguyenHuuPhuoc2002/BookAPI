@@ -8,7 +8,7 @@ namespace BookAPI.Data
     {
         [Key]
         [StringLength(50)]
-        public string MaSach {  get; set; }
+        public string MaSach {  get; set; } 
 
         [StringLength(50)]
         public string TenSach {  get; set; }
