@@ -1,11 +1,12 @@
 ﻿using BookAPI.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookAPI.Repositories
+namespace BookAPI.Repositories.Database
 {
     public class DataContext : DbContext
     {
-        public DataContext(DbContextOptions<DataContext> options): base(options) {
+        public DataContext(DbContextOptions<DataContext> options) : base(options)
+        {
         }
 
         #region DbSet
