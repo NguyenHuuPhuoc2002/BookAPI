@@ -17,6 +17,8 @@ namespace BookAPI.Repositories.Database
         public DbSet<ChiTietHoaDon> chiTietHoaDons { get; set; }
         public DbSet<KhachHang> khachHangs { get; set; }
         public DbSet<TrangThai> trangThais { get; set; }
+        public DbSet<GioHang> gioHangs { get; set; }
+        public DbSet<GioHangChiTiet> gioHangChiTiets { get; set; }
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -35,6 +37,46 @@ namespace BookAPI.Repositories.Database
                 entity.Property(kh => kh.RandomKey).HasMaxLength(50);
                 entity.Property(kh => kh.Email).HasMaxLength(50);
                 entity.HasIndex(kh => kh.Email).IsUnique();
+            });
+            modelBuilder.Entity<GioHang>(entity =>
+            {
+                entity.ToTable("GioHang");
+                entity.HasKey(gh => gh.GioHangId);
+                entity.HasIndex(gh => gh.MaKH).IsUnique();
+                entity.HasMany(gh => gh.gioHangChiTiets)
+                 .WithOne(ghct => ghct.GioHang)
+                 .HasForeignKey(ghct => ghct.GioHangId)
+                 .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(gh => gh.KhachHang)
+                       .WithOne(kh => kh.GioHang)
+                       .HasForeignKey<GioHang>(gh => gh.MaKH)
+                       .OnDelete(DeleteBehavior.Cascade);
+                   
+            });
+
+            modelBuilder.Entity<GioHangChiTiet>(entity =>
+            {
+                entity.HasOne(ghct => ghct.Sach)
+                      .WithMany(s => s.gioHangChiTiets) 
+                      .HasForeignKey(ghct => ghct.MaSach) 
+                      .OnDelete(DeleteBehavior.Cascade); 
+            });
+
+
+            modelBuilder.Entity<Sach>(entity =>
+            {
+                entity.HasMany(s => s.gioHangChiTiets)
+                .WithOne(ghct => ghct.Sach)
+                .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(s => s.Loai)
+                          .WithMany(l => l.sachs)
+                          .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(s => s.NhaCungCap)
+                      .WithMany(ncc => ncc.sachs)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
         }

@@ -17,7 +17,7 @@ namespace BookAPI.Data
         public string? RandomKey { get; set; }
         public bool HieuLuc { get; set; }
         public int VaiTro { get; set; }
-
+        public GioHang? GioHang { get; set; }
         public ICollection<HoaDon> hoaDons { get; set; }
     }
 }

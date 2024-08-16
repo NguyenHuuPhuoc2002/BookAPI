@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BookAPI.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240815154120_AddAttributes")]
-    partial class AddAttributes
+    [Migration("20240816153714_InitDatabase")]
+    partial class InitDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,10 +39,9 @@ namespace BookAPI.Migrations
                     b.Property<double>("GiamGia")
                         .HasColumnType("float");
 
-                    b.Property<string>("MaHD")
-                        .IsRequired()
+                    b.Property<int>("MaHD")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<string>("MaSach")
                         .IsRequired()
@@ -61,11 +60,80 @@ namespace BookAPI.Migrations
                     b.ToTable("ChiTietHoaDon");
                 });
 
-            modelBuilder.Entity("BookAPI.Data.HoaDon", b =>
+            modelBuilder.Entity("BookAPI.Data.GioHang", b =>
                 {
-                    b.Property<string>("MaHD")
+                    b.Property<int>("GioHangId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GioHangId"));
+
+                    b.Property<string>("MaKH")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("GioHangId");
+
+                    b.HasIndex("MaKH")
+                        .IsUnique();
+
+                    b.ToTable("GioHang", (string)null);
+                });
+
+            modelBuilder.Entity("BookAPI.Data.GioHangChiTiet", b =>
+                {
+                    b.Property<int>("GioHangChiTietId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("GioHangChiTietId"));
+
+                    b.Property<string>("Anh")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<double>("DonGia")
+                        .HasColumnType("float");
+
+                    b.Property<double>("GiamGia")
+                        .HasColumnType("float");
+
+                    b.Property<int>("GioHangId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MaSach")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("SoLuong")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TenSach")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<double>("ThanhTien")
+                        .HasColumnType("float");
+
+                    b.HasKey("GioHangChiTietId");
+
+                    b.HasIndex("GioHangId");
+
+                    b.HasIndex("MaSach");
+
+                    b.ToTable("ChiTietGioHang");
+                });
+
+            modelBuilder.Entity("BookAPI.Data.HoaDon", b =>
+                {
+                    b.Property<int>("MaHD")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MaHD"));
 
                     b.Property<string>("CachThanhToan")
                         .IsRequired()
@@ -333,6 +401,36 @@ namespace BookAPI.Migrations
                     b.Navigation("Sach");
                 });
 
+            modelBuilder.Entity("BookAPI.Data.GioHang", b =>
+                {
+                    b.HasOne("BookAPI.Data.KhachHang", "KhachHang")
+                        .WithOne("GioHang")
+                        .HasForeignKey("BookAPI.Data.GioHang", "MaKH")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("KhachHang");
+                });
+
+            modelBuilder.Entity("BookAPI.Data.GioHangChiTiet", b =>
+                {
+                    b.HasOne("BookAPI.Data.GioHang", "GioHang")
+                        .WithMany("gioHangChiTiets")
+                        .HasForeignKey("GioHangId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BookAPI.Data.Sach", "Sach")
+                        .WithMany("gioHangChiTiets")
+                        .HasForeignKey("MaSach")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GioHang");
+
+                    b.Navigation("Sach");
+                });
+
             modelBuilder.Entity("BookAPI.Data.HoaDon", b =>
                 {
                     b.HasOne("BookAPI.Data.KhachHang", "KhachHang")
@@ -356,15 +454,22 @@ namespace BookAPI.Migrations
                 {
                     b.HasOne("BookAPI.Data.Loai", "Loai")
                         .WithMany("sachs")
-                        .HasForeignKey("MaLoai");
+                        .HasForeignKey("MaLoai")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("BookAPI.Data.NhaCungCap", "NhaCungCap")
                         .WithMany("sachs")
-                        .HasForeignKey("MaNCC");
+                        .HasForeignKey("MaNCC")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Loai");
 
                     b.Navigation("NhaCungCap");
+                });
+
+            modelBuilder.Entity("BookAPI.Data.GioHang", b =>
+                {
+                    b.Navigation("gioHangChiTiets");
                 });
 
             modelBuilder.Entity("BookAPI.Data.HoaDon", b =>
@@ -374,6 +479,8 @@ namespace BookAPI.Migrations
 
             modelBuilder.Entity("BookAPI.Data.KhachHang", b =>
                 {
+                    b.Navigation("GioHang");
+
                     b.Navigation("hoaDons");
                 });
 
@@ -390,6 +497,8 @@ namespace BookAPI.Migrations
             modelBuilder.Entity("BookAPI.Data.Sach", b =>
                 {
                     b.Navigation("chiTietHoaDons");
+
+                    b.Navigation("gioHangChiTiets");
                 });
 
             modelBuilder.Entity("BookAPI.Data.TrangThai", b =>

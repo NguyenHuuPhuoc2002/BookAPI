@@ -9,7 +9,7 @@ namespace BookAPI.Data
         [Key]
         public int MaCT { get; set; }
         [StringLength(50)]
-        public string MaHD{ get; set; }
+        public int MaHD{ get; set; }
 
         [StringLength(50)]
         public string MaSach { get; set; }

@@ -44,6 +44,7 @@ namespace BookAPI.Data
         public NhaCungCap NhaCungCap { get; set; }
 
         public ICollection<ChiTietHoaDon> chiTietHoaDons { get; set; }
+        public ICollection<GioHangChiTiet> gioHangChiTiets { get; set; }
 
         
     }

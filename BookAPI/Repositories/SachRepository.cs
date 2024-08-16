@@ -58,7 +58,8 @@ namespace BookAPI.Repositories
 
             if (!string.IsNullOrWhiteSpace(key))
             {
-                books = _context.sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim()));
+                books = _context.sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())
+                    || p.TacGia.ToLower().Contains(key.ToLower().Trim()));
             }
             var data = PaginatedList<Sach>.Create(books, page, pageSize);
             var result = data.Select(p => new SachModel

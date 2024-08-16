@@ -17,7 +17,7 @@ namespace BookAPI.Controllers
             _sach = sach;
         }
 
-        [HttpGet("GettAll")]
+        [HttpGet("books")]
         public async Task<IActionResult> GettAll(string? maLoai, int? page, int? pageSize)
         {
             try
@@ -33,7 +33,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("GetBookById{id}")]
+        [HttpGet("books/{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             try
@@ -54,7 +54,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("SearchBook{keyWord}")]
+        [HttpGet("books/search")]
         public async Task<IActionResult> SearchBook(string? keyWord, int? page, int? pageSize)
         {
             try

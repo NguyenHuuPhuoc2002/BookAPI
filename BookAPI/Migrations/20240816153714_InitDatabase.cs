@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace BookAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class InitDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -77,6 +77,25 @@ namespace BookAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "GioHang",
+                columns: table => new
+                {
+                    GioHangId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MaKH = table.Column<string>(type: "nvarchar(50)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GioHang", x => x.GioHangId);
+                    table.ForeignKey(
+                        name: "FK_GioHang_KhachHang_MaKH",
+                        column: x => x.MaKH,
+                        principalTable: "KhachHang",
+                        principalColumn: "MaKH",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sach",
                 columns: table => new
                 {
@@ -89,7 +108,9 @@ namespace BookAPI.Migrations
                     NgayNhap = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TacGia = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     MaLoai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    MaNCC = table.Column<string>(type: "nvarchar(50)", nullable: true)
+                    SoLuongTon = table.Column<int>(type: "int", nullable: true),
+                    MoTa = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    MaNCC = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -98,19 +119,22 @@ namespace BookAPI.Migrations
                         name: "FK_Sach_Loai_MaLoai",
                         column: x => x.MaLoai,
                         principalTable: "Loai",
-                        principalColumn: "MaLoai");
+                        principalColumn: "MaLoai",
+                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_Sach_NhaCungCap_MaNCC",
                         column: x => x.MaNCC,
                         principalTable: "NhaCungCap",
-                        principalColumn: "MaNCC");
+                        principalColumn: "MaNCC",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
                 name: "HoaDon",
                 columns: table => new
                 {
-                    MaHD = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    MaHD = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
                     MaKH = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     NgayDat = table.Column<DateTime>(type: "datetime2", nullable: true),
                     NgayGiao = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -143,12 +167,44 @@ namespace BookAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ChiTietGioHang",
+                columns: table => new
+                {
+                    GioHangChiTietId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Anh = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    TenSach = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    DonGia = table.Column<double>(type: "float", nullable: false),
+                    SoLuong = table.Column<int>(type: "int", nullable: false),
+                    ThanhTien = table.Column<double>(type: "float", nullable: false),
+                    GiamGia = table.Column<double>(type: "float", nullable: false),
+                    GioHangId = table.Column<int>(type: "int", nullable: false),
+                    MaSach = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChiTietGioHang", x => x.GioHangChiTietId);
+                    table.ForeignKey(
+                        name: "FK_ChiTietGioHang_GioHang_GioHangId",
+                        column: x => x.GioHangId,
+                        principalTable: "GioHang",
+                        principalColumn: "GioHangId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ChiTietGioHang_Sach_MaSach",
+                        column: x => x.MaSach,
+                        principalTable: "Sach",
+                        principalColumn: "MaSach",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ChiTietHoaDon",
                 columns: table => new
                 {
                     MaCT = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    MaHD = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    MaHD = table.Column<int>(type: "int", maxLength: 50, nullable: false),
                     MaSach = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     DonGia = table.Column<double>(type: "float", nullable: false),
                     SoLuong = table.Column<int>(type: "int", nullable: false),
@@ -172,6 +228,16 @@ namespace BookAPI.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChiTietGioHang_GioHangId",
+                table: "ChiTietGioHang",
+                column: "GioHangId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChiTietGioHang_MaSach",
+                table: "ChiTietGioHang",
+                column: "MaSach");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ChiTietHoaDon_MaHD",
                 table: "ChiTietHoaDon",
                 column: "MaHD");
@@ -180,6 +246,12 @@ namespace BookAPI.Migrations
                 name: "IX_ChiTietHoaDon_MaSach",
                 table: "ChiTietHoaDon",
                 column: "MaSach");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GioHang_MaKH",
+                table: "GioHang",
+                column: "MaKH",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_HoaDon_MaKH",
@@ -212,7 +284,13 @@ namespace BookAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "ChiTietGioHang");
+
+            migrationBuilder.DropTable(
                 name: "ChiTietHoaDon");
+
+            migrationBuilder.DropTable(
+                name: "GioHang");
 
             migrationBuilder.DropTable(
                 name: "HoaDon");
