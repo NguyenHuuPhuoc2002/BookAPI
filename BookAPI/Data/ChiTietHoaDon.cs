@@ -8,7 +8,6 @@ namespace BookAPI.Data
     {
         [Key]
         public int MaCT { get; set; }
-
         [StringLength(50)]
         public string MaHD{ get; set; }
 

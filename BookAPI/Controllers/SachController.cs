@@ -68,7 +68,6 @@ namespace BookAPI.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
-            return Ok();
         }
 
     }
