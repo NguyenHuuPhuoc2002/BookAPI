@@ -7,6 +7,7 @@ namespace BookAPI.Repositories
         Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize);
         Task<SachModel> GetBookByIdAsync(string id);
         Task<IEnumerable<SachModel>> SearchBookAsync(string key, int page, int pageSize);
+        Task<IEnumerable<SachModel>> SearchBookByNXBAsync(string key, int page, int pageSize);
 
     }
 }

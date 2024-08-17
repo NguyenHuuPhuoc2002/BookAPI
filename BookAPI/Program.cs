@@ -3,6 +3,7 @@ using BookAPI.Repositories;
 using BookAPI.Repositories.Database;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace BookAPI
 {
@@ -10,8 +11,22 @@ namespace BookAPI
     {
         public static void Main(string[] args)
         {
+            // Cấu hình console để sử dụng UTF-8
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+            //Cấu hình logging
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console() // Ghi log ra console
+                .WriteTo.File("Logs/log.txt",
+                    rollingInterval: RollingInterval.Day, // Tạo file log mới mỗi ngày
+                    retainedFileCountLimit: 7, // Giữ lại log của 7 ngày gần nhất
+                    encoding: System.Text.Encoding.UTF8) // Ghi log vào file với UTF-8
+                .CreateLogger();
+
+
             var builder = WebApplication.CreateBuilder(args);
 
+            builder.Host.UseSerilog();
             // Add services to the container.
 
             builder.Services.AddControllers();

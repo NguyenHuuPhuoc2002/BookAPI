@@ -18,5 +18,6 @@ namespace BookAPI.Models
         public int? SoLuongTon { get; set; }
         public string? MoTa { get; set; }
         public string? MaNCC { get; set; }
+        public string? TenNhaXuatBan{ get; set; }
     }
 }

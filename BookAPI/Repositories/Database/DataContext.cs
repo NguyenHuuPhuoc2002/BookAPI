@@ -18,6 +18,7 @@ namespace BookAPI.Repositories.Database
         public DbSet<KhachHang> khachHangs { get; set; }
         public DbSet<TrangThai> trangThais { get; set; }
         public DbSet<GioHang> gioHangs { get; set; }
+        public DbSet<NhaXuatBan> nhaXuatBans { get; set; }
         public DbSet<GioHangChiTiet> gioHangChiTiets { get; set; }
         #endregion
 
@@ -75,6 +76,10 @@ namespace BookAPI.Repositories.Database
                           .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasOne(s => s.NhaCungCap)
+                      .WithMany(ncc => ncc.sachs)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(s => s.NhaXuatBan)
                       .WithMany(ncc => ncc.sachs)
                       .OnDelete(DeleteBehavior.SetNull);
             });

@@ -36,9 +36,13 @@ namespace BookAPI.Data
 
         [StringLength(50)]
         public string? MaNCC { get; set; }
+        public int? MaNXB { get; set; }
 
         [ForeignKey("MaLoai")]
         public Loai Loai { get; set; }
+
+        [ForeignKey("MaNXB")]
+        public NhaXuatBan NhaXuatBan { get; set; }
 
         [ForeignKey("MaNCC")]
         public NhaCungCap NhaCungCap { get; set; }
