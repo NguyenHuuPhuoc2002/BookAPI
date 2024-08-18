@@ -25,7 +25,6 @@ namespace BookAPI.Repositories
             {
                 _logger.LogInformation($"Thực hiện thêm giỏ hàng của khách hàng {cart.MaKH} vào csdl");
                 await _context.AddAsync(cart);
-                _logger.LogInformation("Thêm giỏ hàng vào csdl thành công");
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)

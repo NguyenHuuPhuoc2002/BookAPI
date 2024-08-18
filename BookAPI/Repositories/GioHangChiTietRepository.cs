@@ -26,7 +26,6 @@ namespace BookAPI.Repositories
                 var cartItemMap = _mapper.Map<GioHangChiTiet>(cartItem);
                 _logger.LogInformation($"Thực hiện thêm sách {cartItem.TenSach} vào giỏ hàng");
                 var result = await _context.AddAsync(cartItemMap);
-                _logger.LogInformation($"Thêm sách {cartItem.TenSach} vào giỏ hàng thành công");
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -106,10 +105,7 @@ namespace BookAPI.Repositories
                 {
                     item.SoLuong += 1;
 
-                    _logger.LogInformation($"Cập nhật số lượng sách trong giỏ với mã {id}");
                     _context.Update(item);
-
-                    _logger.LogInformation($"Cập nhật số lượng sách trong giỏ thành công");
                     await _context.SaveChangesAsync();
                 }
             }
