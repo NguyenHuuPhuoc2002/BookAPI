@@ -28,7 +28,7 @@ namespace BookAPI.Repositories
             if (!string.IsNullOrEmpty(maLoai))
             {
                 _logger.LogInformation("Truy vấn sách theo MaLoai: {maLoai}", maLoai);
-                listBook = _context.sachs.Where(p => p.MaLoai.Equals(maLoai));
+                listBook = _context.sachs.Where(p => p.MaLoai == maLoai);
             }
 
             try
@@ -36,7 +36,7 @@ namespace BookAPI.Repositories
                 _logger.LogInformation("Số lượng sách trước phân trang: {listBook}", await listBook.CountAsync());
                 var data = PaginatedList<Sach>.Create(listBook, page, pageSize);
 
-                _logger.LogInformation($"Số lượng sách sau phân trang: {data.Count}");
+                _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count);
                 var result = (from s in data
                               join nxb in _context.nhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
@@ -57,12 +57,12 @@ namespace BookAPI.Repositories
 
                               }).OrderByDescending(p => p.NgayNhap);
 
-                _logger.LogInformation($"Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}");
+                _logger.LogInformation("Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}",maLoai, page, pageSize);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Đã xảy ra lỗi khi truy vấn lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}");
+                _logger.LogError(ex, "Đã xảy ra lỗi khi truy vấn lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
                 throw;
             }
         }
@@ -70,7 +70,7 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Truy vấn sách với ID {id} ", id);
+                _logger.LogInformation("Truy vấn lấy sách với ID {id} ", id);
                 var result = await (from s in _context.sachs
                                     join nxb in _context.nhaXuatBans on s.MaNXB equals nxb.MaNXB
                                     where s.MaSach == id.Trim()
@@ -150,7 +150,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Đã xảy ra lỗi khi truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}");
+                _logger.LogError(ex, "Đã xảy ra lỗi khi truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}", key, page, pageSize);
                 throw;
             }
         }
@@ -195,7 +195,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Đã xảy ra lỗi khi truy vấn tìm kiếm sách với NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}");
+                _logger.LogError(ex, "Đã xảy ra lỗi khi truy vấn tìm kiếm sách với NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}", key, page, pageSize);
                 throw;
             }
         }

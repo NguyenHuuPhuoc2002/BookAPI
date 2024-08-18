@@ -24,9 +24,10 @@ namespace BookAPI.Repositories
             try
             {
                 var cartItemMap = _mapper.Map<GioHangChiTiet>(cartItem);
-                _logger.LogInformation($"Thực hiện thêm sách {cartItem.TenSach} vào giỏ hàng");
+                _logger.LogInformation("Thực hiện thêm sách {TenSach} vào giỏ hàng", cartItem.TenSach);
                 var result = await _context.AddAsync(cartItemMap);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Thêm sách {TenSach} vào giỏ hàng thành công", cartItem.TenSach);
             }
             catch (Exception ex)
             {
@@ -35,27 +36,75 @@ namespace BookAPI.Repositories
             }
         }
 
-        public Task DeleteAsync(int id)
+        public async Task DeleteAsync(CartModel cartItem)
         {
-            throw new NotImplementedException();
+            try
+            {
+                if (cartItem != null)
+                {
+                    _logger.LogInformation("Truy vấn lấy sách trong giỏ với mã sách {id}", cartItem.MaSach);
+                    var book = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.MaSach == cartItem.MaSach &&
+                                                                                        p.GioHangId == cartItem.GioHangId);
+                    if (book == null)
+                    {
+                        _logger.LogWarning("Không tìm thấy sách trong giỏ với mã sách {id}", cartItem.MaSach);
+                    }
+                    else
+                    {
+                        _context.gioHangChiTiets.Remove(book);
+                        await _context.SaveChangesAsync();
+                        _logger.LogInformation("Xóa sách trong giỏ thành công");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi xóa sách trong giỏ");
+                throw;
+            }
         }
 
-        public Task<IEnumerable<CartModel>> GetAllCartsAsync()
+        public async Task<IEnumerable<CartModel>> GetAllCartsAsync(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _logger.LogInformation("Truy vấn lấy tất cả sách với Id {id} trong giỏ", id);
+                var cart =  _context.gioHangChiTiets.Where(p => p.GioHangId == id);
+
+                var result = await cart.Select(p => new CartModel
+                {
+                    Anh = p.Anh,
+                    TenSach = p.TenSach,
+                    MaSach = p.MaSach,
+                    DonGia = p.DonGia,
+                    SoLuong = p.SoLuong,
+                    ThanhTien = p.ThanhTien,
+                    GiamGia = p.GiamGia,
+                    GioHangId = id
+                }).ToListAsync();
+
+
+                _logger.LogInformation("Trả về tất cả sách trong giỏ thành công {count}", result.Count());
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi truy vấn lấy một đối tượng sách");
+                throw;
+            }
         }
 
         public async Task<CartModel> GetCartItemByBookNameAsync(string maSach, int id)
         {
             try
             {
-                _logger.LogInformation($"Truy vấn lấy một sản phẩm với mã sách {maSach}");
+                _logger.LogInformation("Truy vấn lấy một sách với mã sách {maSach} trong giỏ", maSach);
                 var cart = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id &&
                                                                                     p.MaSach == maSach);
 
                 if (cart == null)
                 {
-                    _logger.LogWarning($"Không tìm thấy sách với mã {maSach}");
+                    _logger.LogWarning("Không tìm thấy sách với mã sách{maSach} trong giỏ", maSach);
                 }
                 var result = _mapper.Map<CartModel>(cart);
                 _logger.LogInformation("Trả về một đối tượng sách thành công");
@@ -72,12 +121,12 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation($"Truy vấn lấy một sản phẩm với Id {id}");
+                _logger.LogInformation("Truy vấn lấy sách với Id {id} trong giỏ", id);
                 var cart = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id);
 
                 if (cart == null)
                 {
-                    _logger.LogWarning($"Không tìm thấy sản phẩm với Id {id}");
+                    _logger.LogWarning("Không tìm thấy sách với Id {id}trong giỏ", id);
                 }
                 var result = _mapper.Map<CartModel>(cart);
                 _logger.LogInformation("Trả về một đối tượng sách thành công");
@@ -90,23 +139,31 @@ namespace BookAPI.Repositories
             }
         }
 
-        public async Task UpdateAsync(int id)
+        public async Task UpdateAsync(int id, int amount)
         {
             try
             {
-                _logger.LogInformation($"Truy vấn lấy sách trong giỏ bằng với mã {id}");
+                _logger.LogInformation("Truy vấn lấy sách trong giỏ bằng với GioHangChiTietId {id}", id);
                 var item = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangChiTietId == id);
 
                 if (item == null)
                 {
-                    _logger.LogWarning($"Không tìm thấy sách trong giỏ với mã {id}");
+                    _logger.LogWarning("Không tìm thấy sách trong giỏ với mã {id}", id);
                 }
                 else
                 {
-                    item.SoLuong += 1;
+                    if(amount != 1)
+                    {
+                        item.SoLuong = amount;
+                    }
+                    else
+                    {
+                        item.SoLuong += 1;
+                    }
 
                     _context.Update(item);
                     await _context.SaveChangesAsync();
+                    _logger.LogInformation("Cập nhật số lượng sách trong giỏ với mã KH {Id} thành công", id);
                 }
             }
             catch

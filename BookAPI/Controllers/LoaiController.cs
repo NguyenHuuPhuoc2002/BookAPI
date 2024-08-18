@@ -31,7 +31,7 @@ namespace BookAPI.Controllers
             }catch (Exception ex)
             {
                 _logger.LogError("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy tất cả loại");
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
         [HttpGet("loais{id}")]
@@ -48,7 +48,7 @@ namespace BookAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy một đối tượng loại");
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
     }

@@ -23,9 +23,9 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation($"Thực hiện thêm giỏ hàng của khách hàng {cart.MaKH} vào csdl");
                 await _context.AddAsync(cart);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Thêm giỏ hàng của khách hàng {MaKH} vào csdl thành công", cart.MaKH);
             }
             catch (Exception ex)
             {
@@ -46,7 +46,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Xảy ra lỗi khi truy vấn lấy tất cả giỏ hàng");
+                _logger.LogError("Xảy ra lỗi khi truy vấn lấy tất cả giỏ hàng");
                 throw;
             }
         }
@@ -55,12 +55,12 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation($"Truy vấn lấy giỏ hàng với mã {id}");
+                _logger.LogInformation("Truy vấn lấy giỏ hàng với mã {id}", id);
                 var cart = await _context.gioHangs.SingleOrDefaultAsync(p => p.GioHangId == id);
 
                 if(cart == null )
                 {
-                    _logger.LogWarning($"Không tìm thấy giỏ hàng có Id {id}");
+                    _logger.LogWarning("Không tìm thấy giỏ hàng có Id {id}", id);
                 }
 
                 _logger.LogInformation("Trả về một đối tượng giỏ hàng thành công");
@@ -77,12 +77,12 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation($"Truy vấn lấy giỏ hàng với mã KH {maKh}");
+                _logger.LogInformation("Truy vấn lấy giỏ hàng với mã KH {maKh}", maKh);
                 var cart = await _context.gioHangs.SingleOrDefaultAsync(p => p.MaKH == maKh);
 
                 if (cart == null)
                 {
-                    _logger.LogWarning($"Không tìm thấy giỏ hàng có mã KH {maKh}");
+                    _logger.LogWarning("Không tìm thấy giỏ hàng có mã KH {maKh}", maKh);
                 }
 
                 _logger.LogInformation("Trả về một đối tượng giỏ hàng thành công");
@@ -90,7 +90,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Xảy ra lỗi khi truy vấn lấy một đối tượng giỏ hàng");
+                _logger.LogError("Xảy ra lỗi khi truy vấn lấy một đối tượng giỏ hàng");
                 throw;
             }
         }
