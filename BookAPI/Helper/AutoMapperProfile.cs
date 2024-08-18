@@ -9,6 +9,8 @@ namespace BookAPI.Helper
         public AutoMapperProfile()
         {
             CreateMap<Sach, SachModel>().ReverseMap();
+            CreateMap<Loai, LoaiModel>().ReverseMap();
+            CreateMap<GioHangChiTiet, CartModel>().ReverseMap();
         }
 
     }

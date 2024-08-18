@@ -1,6 +1,6 @@
 ﻿using BookAPI.Models;
 
-namespace BookAPI.Repositories
+namespace BookAPI.Repositories.Interfaces
 {
     public interface ISachRepository
     {

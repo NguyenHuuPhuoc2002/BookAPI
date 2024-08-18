@@ -1,5 +1,5 @@
 ﻿using BookAPI.Data;
-using BookAPI.Repositories;
+using BookAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -26,15 +26,15 @@ namespace BookAPI.Controllers
             {
                 int pageIndex = page ?? 1;
                 int pSize = pageSize ?? 9;
-                _logger.LogInformation($"Lấy sách theo mã loại {maLoai} (nếu có) còn không thì lấy toàn bộ sách , Trang: {pageIndex}, Kích thước trang: {pSize}");
+                _logger.LogInformation("Nhận yêu cầu HTTP lấy sách theo mã loại {maLoai} (nếu có) còn không thì lấy danh sách sách , Trang: {pageIndex}, Kích thước trang: {pSize}", maLoai, pageIndex, pSize);
                 var books = await _sach.GetAllBooksAsync(maLoai, pageIndex, pSize);
 
-                _logger.LogInformation($"Lấy sách thành công, tổng số sách: {books.Count()}");
+                _logger.LogInformation("Trả về danh sách sách thành công, số lượng: {books}", books.Count());
                 return Ok(books);
             }
             catch
             {
-                _logger.LogError($"Lỗi khi lấy sách ");
+                _logger.LogError("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy tất cả sách");
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
@@ -44,22 +44,22 @@ namespace BookAPI.Controllers
         {
             try
             {
-                _logger.LogInformation($"Lấy toàn bộ sách theo mã sách {id}");
+                _logger.LogInformation("Lấy toàn bộ sách theo mã sách {id}", id);
                 var book = await _sach.GetBookByIdAsync(id);
                 if (book != null)
                 {
-                    _logger.LogInformation($"Lấy sách theo mã sách {id} thành công");
+                    _logger.LogInformation("Lấy sách theo mã sách {id} thành công", id);
                     return Ok(book);
                 }
                 else
                 {
-                    _logger.LogError($"Không tìm thấy mã sách {id} : {DateTime.Now}");
+                    _logger.LogError("Không tìm thấy mã sách {id}", id);
                     return NotFound();
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Lỗi khi lấy sách theo mã {id} :  {DateTime.Now}");
+                _logger.LogError("Lỗi khi lấy sách theo mã {id}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
@@ -72,15 +72,15 @@ namespace BookAPI.Controllers
                 int pageIndex = page ?? 1;
                 int pSize = pageSize ?? 9;
 
-                _logger.LogInformation($"Lấy toàn bộ sách theo keyWord {keyWord}, Trang: {pageIndex}, Kích thước trang: {pSize}");
+                _logger.LogInformation("Nhận yêu cầu HTTP lấy tất cả sách theo keyWord {keyWord}, Trang: {pageIndex}, Kích thước trang: {pSize}", keyWord, pageIndex, pSize);
                 var books = await _sach.SearchBookAsync(keyWord, pageIndex, pSize);
 
-                _logger.LogInformation($"Lấy toàn bộ sách theo keyWord {keyWord} thành công");
+                _logger.LogInformation("Trả về danh sách sách theo keyWord {keyWord} thành công", keyWord);
                 return Ok(books);
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"Lỗi khi lấy sách theo keyWord {keyWord}");
+                _logger.LogInformation("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy sách theo keyWord {keyWord}", keyWord);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
@@ -93,15 +93,15 @@ namespace BookAPI.Controllers
                 int pageIndex = page ?? 1;
                 int pSize = pageSize ?? 9;
 
-                _logger.LogInformation($"Lấy toàn bộ sách theo NXB {keyWord}, Trang: {pageIndex}, Kích thước trang: {pSize}");
+                _logger.LogInformation("Nhận yêu cầu HTTP lấy tất cả sách theo NXB {keyWord}, Trang: {pageIndex}, Kích thước trang: {pSize}", keyWord, pageIndex, pSize);
                 var books = await _sach.SearchBookByNXBAsync(keyWord, pageIndex, pSize);
 
-                _logger.LogInformation($"Lấy toàn bộ sách theo NXB {keyWord} thành công");
+                _logger.LogInformation("Trả về tất cả sách theo NXB {keyWord} thành công, số lượng {books}", keyWord, books.Count());
                 return Ok(books);
             }
             catch (Exception ex)
             {
-                _logger.LogInformation($"Lỗi khi lấy sách theo NXB {keyWord}");
+                _logger.LogInformation("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy sách theo NXB {keyWord}", keyWord);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
