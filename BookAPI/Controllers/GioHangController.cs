@@ -27,15 +27,15 @@ namespace BookAPI.Controllers
             _sach = sach;
         }
 
-        [HttpGet("giohang")]
+        [HttpGet("giohangs")]
         public async Task<IActionResult> GetCart()
         {
             var maKh = "phucduong";
-            _logger.LogInformation("Yêu cầu lấy giỏ hàng với mã KH {id}", maKh);
+            
             var cart = await _cart.GetCartByMaKhAsync(maKh);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
 
-            _logger.LogInformation("Yêu cầu lấy giỏ hàng thành công {count}", cartItems.Count());
+            _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
             return Ok(new ApiResponse
             {
                 Success = true,
@@ -45,12 +45,12 @@ namespace BookAPI.Controllers
             });
         }
 
-        [HttpPost("giohang/add")]
+        [HttpPost("giohangs/add")]
         public async Task<IActionResult> AddBook(string id)
         {
             try
             {
-                var maKH = "phucduong";
+                var maKH = "phuoc";
                 _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKH);
                 var cart = await _cart.GetCartByMaKhAsync(maKH) ?? await CreateCartAsync(maKH);
                 _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
@@ -109,7 +109,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpDelete("giohang/delete")]
+        [HttpDelete("giohangs/delete")]
         public async Task<IActionResult> Delete(string id)
         {
             var khachHang = "phucduong";
@@ -145,7 +145,7 @@ namespace BookAPI.Controllers
             });
         }
 
-        [HttpPut("giohang/update-amount")]
+        [HttpPut("giohangs/update-amount")]
         public async Task<IActionResult> UpdateAmount(string id, int amount) 
         {
             if(amount <= 0)
@@ -176,6 +176,21 @@ namespace BookAPI.Controllers
             await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, amount);
             _logger.LogInformation("Cập nhật số lượng thành công");
             return NoContent();
+        }
+
+        [HttpDelete("giohangs/clear-all")]
+        public async Task<IActionResult> ClearAll()
+        {
+            var maKh = "phucduong";
+            _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id}", maKh);
+            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            await _cartItem.ClearAllAsync(cart.GioHangId);
+            _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id} thành công", maKh);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Xóa tất cả sách thành công!",
+            });
         }
     }
 }

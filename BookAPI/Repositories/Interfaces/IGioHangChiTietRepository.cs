@@ -11,5 +11,6 @@ namespace BookAPI.Repositories.Interfaces
         Task DeleteAsync(CartModel cartItem);
         Task UpdateAsync(int id, int amount);
         Task AddAsync(CartModel cartItem);
+        Task ClearAllAsync(int id);
     }
 }

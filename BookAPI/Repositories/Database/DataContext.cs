@@ -20,6 +20,7 @@ namespace BookAPI.Repositories.Database
         public DbSet<GioHang> gioHangs { get; set; }
         public DbSet<NhaXuatBan> nhaXuatBans { get; set; }
         public DbSet<GioHangChiTiet> gioHangChiTiets { get; set; }
+        public DbSet<RefreshToken> refreshTokens { get; set; }
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

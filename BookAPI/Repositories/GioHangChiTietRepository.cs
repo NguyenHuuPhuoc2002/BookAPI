@@ -36,6 +36,24 @@ namespace BookAPI.Repositories
             }
         }
 
+        public async Task ClearAllAsync(int id)
+        {
+            try
+            {
+                _logger.LogInformation("Truy vấn lấy tất cả sách với mã GioHangId {id}", id);
+                var cartItem = _context.gioHangChiTiets.Where(p => p.GioHangId == id);
+                _logger.LogInformation("Thực hiện xóa tất cả sách với mã GioHangId {id}", id);
+                _context.gioHangChiTiets.RemoveRange(cartItem);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện xóa tất cả sách với mã GioHangId {id} thành công", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi clear all sách trong giỏ");
+                throw;
+            }
+        }
+
         public async Task DeleteAsync(CartModel cartItem)
         {
             try
@@ -145,7 +163,7 @@ namespace BookAPI.Repositories
             {
                 _logger.LogInformation("Truy vấn lấy sách trong giỏ bằng với GioHangChiTietId {id}", id);
                 var item = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangChiTietId == id);
-
+                
                 if (item == null)
                 {
                     _logger.LogWarning("Không tìm thấy sách trong giỏ với mã {id}", id);
