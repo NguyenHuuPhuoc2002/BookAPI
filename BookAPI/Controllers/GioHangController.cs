@@ -33,7 +33,6 @@ namespace BookAPI.Controllers
             var maKh = "phucduong";
             _logger.LogInformation("Yêu cầu lấy giỏ hàng với mã KH {id}", maKh);
             var cart = await _cart.GetCartByMaKhAsync(maKh);
-            _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng của khách hàng với mã {id} và mã giỏ hàng {mgh}", maKh, cart.GioHangId);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
 
             _logger.LogInformation("Yêu cầu lấy giỏ hàng thành công {count}", cartItems.Count());

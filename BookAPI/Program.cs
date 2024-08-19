@@ -24,7 +24,6 @@ namespace BookAPI
                     encoding: System.Text.Encoding.UTF8) // Ghi log vào file với UTF-8
                 .CreateLogger();
 
-
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Host.UseSerilog();
