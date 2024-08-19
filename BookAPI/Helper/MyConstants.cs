@@ -2,7 +2,7 @@
 {
     public static class MyConstants
     {
-        public const string USER_NAME = "UserName";
-        public const string CUSTOMER_ID = "CustomerID";
+        public const string CLAIM_USER_NAME = "UserName";
+        public const string CLAIM_CUSTOMER_ID = "CustomerID";
     }
 }

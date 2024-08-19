@@ -1,6 +1,8 @@
 ﻿using BookAPI.Data;
+using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -28,9 +30,10 @@ namespace BookAPI.Controllers
         }
 
         [HttpGet("giohangs")]
+        [Authorize]
         public async Task<IActionResult> GetCart()
         {
-            var maKh = "phucduong";
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
             
             var cart = await _cart.GetCartByMaKhAsync(maKh);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
@@ -45,12 +48,13 @@ namespace BookAPI.Controllers
             });
         }
 
-        [HttpPost("giohangs/add")]
+        [HttpPost("add")]
+        [Authorize]
         public async Task<IActionResult> AddBook(string id)
         {
             try
             {
-                var maKH = "phuoc";
+                var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
                 _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKH);
                 var cart = await _cart.GetCartByMaKhAsync(maKH) ?? await CreateCartAsync(maKH);
                 _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
@@ -109,14 +113,15 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpDelete("giohangs/delete")]
+        [HttpDelete("delete")]
+        [Authorize]
         public async Task<IActionResult> Delete(string id)
         {
-            var khachHang = "phucduong";
-            if(!string.IsNullOrEmpty(id))
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            if (!string.IsNullOrEmpty(id))
             {
-                _logger.LogInformation("Xóa sách với mã {MaSach} từ giỏ hàng của khách hàng {CustomerId}", id, khachHang);
-                var cart = await _cart.GetCartByMaKhAsync(khachHang);
+                _logger.LogInformation("Xóa sách với mã {MaSach} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
+                var cart = await _cart.GetCartByMaKhAsync(maKh);
                 var book = await _sach.GetBookByIdAsync(id);
 
                 if (book == null)
@@ -145,7 +150,8 @@ namespace BookAPI.Controllers
             });
         }
 
-        [HttpPut("giohangs/update-amount")]
+        [HttpPut("update-amount")]
+        [Authorize]
         public async Task<IActionResult> UpdateAmount(string id, int amount) 
         {
             if(amount <= 0)
@@ -153,7 +159,7 @@ namespace BookAPI.Controllers
                 _logger.LogWarning("Số lượng nhập vào không hợp lệ");
                 return BadRequest();
             }
-            var maKH = "phucduong";
+            var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
 
             _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKH, id, amount);
             var cart = await _cart.GetCartByMaKhAsync(maKH) ;// lấy giỏ hàng theo mã khách hàng
@@ -178,10 +184,11 @@ namespace BookAPI.Controllers
             return NoContent();
         }
 
-        [HttpDelete("giohangs/clear-all")]
+        [HttpDelete("clear-all")]
+        [Authorize]
         public async Task<IActionResult> ClearAll()
         {
-            var maKh = "phucduong";
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
             _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id}", maKh);
             var cart = await _cart.GetCartByMaKhAsync(maKh);
             await _cartItem.ClearAllAsync(cart.GioHangId);

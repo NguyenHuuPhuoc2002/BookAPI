@@ -39,7 +39,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("books/{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             try
@@ -64,7 +64,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("books/search")]
+        [HttpGet("search")]
         public async Task<IActionResult> SearchBook(string keyWord, int? page, int? pageSize)
         {
             try
@@ -85,7 +85,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("books/search-nhaxuatban")]
+        [HttpGet("search-nhaxuatban")]
         public async Task<IActionResult> SearchBookNXB(string keyWord, int? page, int? pageSize)
         {
             try

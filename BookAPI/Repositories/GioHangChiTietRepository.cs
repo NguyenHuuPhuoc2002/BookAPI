@@ -122,7 +122,7 @@ namespace BookAPI.Repositories
 
                 if (cart == null)
                 {
-                    _logger.LogWarning("Không tìm thấy sách với mã sách{maSach} trong giỏ", maSach);
+                    _logger.LogWarning("Không tìm thấy sách với mã sách {maSach} trong giỏ", maSach);
                 }
                 var result = _mapper.Map<CartModel>(cart);
                 _logger.LogInformation("Trả về một đối tượng sách thành công");
@@ -144,7 +144,7 @@ namespace BookAPI.Repositories
 
                 if (cart == null)
                 {
-                    _logger.LogWarning("Không tìm thấy sách với Id {id}trong giỏ", id);
+                    _logger.LogWarning("Không tìm thấy sách với Id {id} trong giỏ", id);
                 }
                 var result = _mapper.Map<CartModel>(cart);
                 _logger.LogInformation("Trả về một đối tượng sách thành công");

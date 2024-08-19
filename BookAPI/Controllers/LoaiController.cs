@@ -34,7 +34,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
-        [HttpGet("loais{id}")]
+        [HttpGet("{id}")]
         public async Task<IActionResult> GetLoaiById(string id)
         {
             try

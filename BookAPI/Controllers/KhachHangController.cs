@@ -33,7 +33,7 @@ namespace BookAPI.Controllers
             _appSettings = optionsMonitor.CurrentValue;
         }
 
-        [HttpPost("khachhang/login")]
+        [HttpPost("login")]
         public async Task<IActionResult> LogIn(LogInModel model)
         {
             _logger.LogInformation("Thực hiện đăng nhập với tên đăng nhập {UserName} và mật khẩu {Password}", model.UserName, model.Password);
@@ -75,11 +75,11 @@ namespace BookAPI.Controllers
                     new Claim(JwtRegisteredClaimNames.Email, user.Email),
                     new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                    new Claim(MyConstants.USER_NAME, user.MaKH),
-                    new Claim(MyConstants.CUSTOMER_ID, user.MaKH),
+                    new Claim(MyConstants.CLAIM_USER_NAME, user.MaKH),
+                    new Claim(MyConstants.CLAIM_CUSTOMER_ID, user.MaKH),
                 }),
 
-                Expires = DateTime.UtcNow.AddSeconds(20), //Thời gian hết hạn
+                Expires = DateTime.UtcNow.AddMinutes(10), //Thời gian hết hạn
 
                 //Xác thực chữ kí của token bằng khóa bí mật và thuật toán HMAC-SHA512.
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), 
@@ -127,7 +127,7 @@ namespace BookAPI.Controllers
         }
 
 
-        [HttpPost("khachhang/renewToken")]
+        [HttpPost("renewToken")]
         public async Task<IActionResult> RenewToken(TokenModel tokenModel)
         {
             _logger.LogInformation("Bắt đầu xử lý renew token");
@@ -168,6 +168,8 @@ namespace BookAPI.Controllers
                         });
                     }
                 }
+
+                _logger.LogDebug("Kiểm tra accessToken hết hạn ?");
                 //check 3: Check accessToken expire?
                 var utcExpireDate = long.Parse(tokenInverification.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
 
@@ -183,7 +185,7 @@ namespace BookAPI.Controllers
                     });
                 }
 
-                _logger.LogDebug("Kiểm tra RefreshToken trong cơ sở dữ liệu");
+                _logger.LogDebug("Kiểm tra tồn tại RefreshToken ");
                 //check 4: check refreshtoken exist in DB
                 var storedToken = await _refreshToken.GetTokenAsync(tokenModel.RefreshToken);
                 if (storedToken is null)
@@ -196,6 +198,7 @@ namespace BookAPI.Controllers
                     });
                 }
 
+                _logger.LogDebug("Kiểm tra trạng thái token");
                 //check 5: check refresh is used/ revoked ?
                 if (storedToken.IsUsed)
                 {
@@ -218,6 +221,7 @@ namespace BookAPI.Controllers
 
                 //check 6: AccessToken ID = JwID in RefreshToken // dịch ngược lại để lấy JwtId từ chuỗi token
                 var jti = tokenInverification.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Jti).Value;
+                _logger.LogDebug("Kiểm tra token có khớp với JWT ID trong cơ sở dữ liệu.");
                 if (storedToken.JwtId != jti)
                 {
                     _logger.LogWarning("Token không khớp");
