@@ -1,8 +1,10 @@
-﻿using BookAPI.Helper;
+﻿using BookAPI.Database;
+using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories;
-using BookAPI.Repositories.Database;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services;
+using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -105,13 +107,21 @@ namespace BookAPI
             builder.Services.AddDbContext<DataContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DbBook")));
 
-            //
+            // Repository
             builder.Services.AddScoped<ISachRepository, SachRepository>();
             builder.Services.AddScoped<ILoaiRepository, LoaiRepository>();
             builder.Services.AddScoped<IGioHangRepository, GioHangRepository>();
             builder.Services.AddScoped<IGioHangChiTietRepository, GioHangChiTietRepository>();
             builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+            // Service
+            builder.Services.AddScoped<ISachService, SachService>();
+            builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+            builder.Services.AddScoped<ILoaiService, LoaiService>();
+            builder.Services.AddScoped<IKhachHangService, KhachHangService>();
+            builder.Services.AddScoped<IGioHangService, GioHangService>();
+            builder.Services.AddScoped<IGioHangChiTietService, GioHangChiTietService>();
 
             // Đăng ký AutoMapper
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile));

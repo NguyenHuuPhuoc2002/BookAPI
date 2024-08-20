@@ -1,7 +1,7 @@
 ﻿using BookAPI.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookAPI.Repositories.Database
+namespace BookAPI.Database
 {
     public class DataContext : DbContext
     {
@@ -54,15 +54,15 @@ namespace BookAPI.Repositories.Database
                        .WithOne(kh => kh.GioHang)
                        .HasForeignKey<GioHang>(gh => gh.MaKH)
                        .OnDelete(DeleteBehavior.Cascade);
-                   
+
             });
 
             modelBuilder.Entity<GioHangChiTiet>(entity =>
             {
                 entity.HasOne(ghct => ghct.Sach)
-                      .WithMany(s => s.gioHangChiTiets) 
-                      .HasForeignKey(ghct => ghct.MaSach) 
-                      .OnDelete(DeleteBehavior.Cascade); 
+                      .WithMany(s => s.gioHangChiTiets)
+                      .HasForeignKey(ghct => ghct.MaSach)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
 

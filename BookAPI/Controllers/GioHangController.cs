@@ -2,6 +2,7 @@
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -15,13 +16,13 @@ namespace BookAPI.Controllers
     [ApiController]
     public class GioHangController : ControllerBase
     {
-        private readonly IGioHangRepository _cart;
-        private readonly IGioHangChiTietRepository _cartItem;
+        private readonly IGioHangService _cart;
+        private readonly IGioHangChiTietService _cartItem;
         private readonly ILogger<GioHangController> _logger;
-        private readonly ISachRepository _sach;
+        private readonly ISachService _sach;
 
-        public GioHangController(IGioHangRepository cart, IGioHangChiTietRepository cartItem,
-                                ILogger<GioHangController> logger, ISachRepository sach)
+        public GioHangController(IGioHangService cart, IGioHangChiTietService cartItem,
+                                ILogger<GioHangController> logger, ISachService sach)
         {
             _cart = cart;
             _cartItem = cartItem;
@@ -35,7 +36,7 @@ namespace BookAPI.Controllers
         {
             var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
             
-            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
 
             _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
@@ -152,36 +153,44 @@ namespace BookAPI.Controllers
 
         [HttpPut("update-amount")]
         [Authorize]
-        public async Task<IActionResult> UpdateAmount(string id, int amount) 
+        public async Task<IActionResult> UpdateAmount(string id, int amount)
         {
-            if(amount <= 0)
+            if (!string.IsNullOrEmpty(id))
             {
-                _logger.LogWarning("Số lượng nhập vào không hợp lệ");
-                return BadRequest();
-            }
-            var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+                if (amount <= 0)
+                {
+                    _logger.LogWarning("Số lượng nhập vào không hợp lệ");
+                    return BadRequest();
+                }
+                var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
 
-            _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKH, id, amount);
-            var cart = await _cart.GetCartByMaKhAsync(maKH) ;// lấy giỏ hàng theo mã khách hàng
-            var book = await _sach.GetBookByIdAsync(id); // lấy sách theo max sách
+                _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKH, id, amount);
+                var cart = await _cart.GetCartByMaKhAsync(maKH);// lấy giỏ hàng theo mã khách hàng
+                var book = await _sach.GetBookByIdAsync(id); // lấy sách theo max sách
 
-            if (book == null)
-            {
-                _logger.LogWarning("Không tìm thấy sách với mã {BookId}", id);
-                return NotFound();
+                if (book == null)
+                {
+                    _logger.LogWarning("Không tìm thấy sách với mã {BookId}", id);
+                    return NotFound();
+                }
+
+                //Lấy một sách trong giỏ hàng chi tiết bằng mã sách và mã giỏ hàng
+                var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
+                if (cartItem == null)
+                {
+                    _logger.LogWarning("Không tìm thấy sách trong giỏ hàng với GioHangId {GioHangId}", cart.GioHangId);
+                    return NotFound();
+                }
+                //Cập nhật
+                await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, amount);
+                _logger.LogInformation("Cập nhật số lượng thành công");
+                return NoContent();
             }
-            
-            //Lấy một sách trong giỏ hàng chi tiết bằng mã sách và mã giỏ hàng
-            var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-            if (cartItem == null)
+            return BadRequest(new ApiResponse
             {
-                _logger.LogWarning("Không tìm thấy sách trong giỏ hàng với GioHangId {GioHangId}", cart.GioHangId);
-                return NotFound();
-            }
-            //Cập nhật
-            await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, amount);
-            _logger.LogInformation("Cập nhật số lượng thành công");
-            return NoContent();
+                Success = false,
+                Message = "Cập nhật không thành công!"
+            });
         }
 
         [HttpDelete("clear-all")]

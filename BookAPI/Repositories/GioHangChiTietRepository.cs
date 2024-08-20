@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BookAPI.Data;
+using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -161,7 +162,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy sách trong giỏ bằng với GioHangChiTietId {id}", id);
-                var item = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangChiTietId == id);
+                var item = await _context.gioHangChiTiets.SingleOrDefaultAsync(p =>  p.GioHangChiTietId == id);
                 
                 if (item == null)
                 {

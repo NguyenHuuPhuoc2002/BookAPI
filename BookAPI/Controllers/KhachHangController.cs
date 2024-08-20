@@ -2,6 +2,7 @@
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,14 +19,14 @@ namespace BookAPI.Controllers
     [ApiController]
     public class KhachHangController : ControllerBase
     {
-        private readonly IKhachHangRepository _khachHang;
+        private readonly IKhachHangService _khachHang;
         private readonly ILogger<KhachHangController> _logger;
-        private readonly IRefreshTokenRepository _refreshToken;
+        private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
         private SecurityToken validatedToken;
 
-        public KhachHangController(IKhachHangRepository khachHang, ILogger<KhachHangController> logger,
-                                    IOptionsMonitor<AppSetting> optionsMonitor, IRefreshTokenRepository refreshToken)
+        public KhachHangController(IKhachHangService khachHang, ILogger<KhachHangController> logger,
+                                    IOptionsMonitor<AppSetting> optionsMonitor, IRefreshTokenService refreshToken)
         {
             _khachHang = khachHang;
             _logger = logger;

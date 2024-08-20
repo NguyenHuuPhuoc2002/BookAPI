@@ -1,5 +1,6 @@
 ﻿using BookAPI.Data;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,10 @@ namespace BookAPI.Controllers
     [ApiController]
     public class LoaiController : ControllerBase
     {
-        private readonly ILoaiRepository _loai;
+        private readonly ILoaiService _loai;
         private readonly ILogger<LoaiController> _logger;
 
-        public LoaiController(ILoaiRepository loai, ILogger<LoaiController> logger) 
+        public LoaiController(ILoaiService loai, ILogger<LoaiController> logger) 
         {
             _loai = loai;
             _logger = logger;

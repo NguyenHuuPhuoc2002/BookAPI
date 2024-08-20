@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using BookAPI.Data;
-using BookAPI.Repositories.Database;
+using BookAPI.Database;
 using BookAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

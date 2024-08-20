@@ -7,7 +7,7 @@ namespace BookAPI.Data
     public class HoaDon
     {
         [Key]
-        public int MaHD { get; set; }
+        public Guid MaHD { get; set; }
 
         [StringLength(50)]
         public string MaKH { get; set; }

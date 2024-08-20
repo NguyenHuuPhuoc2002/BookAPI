@@ -7,9 +7,9 @@ namespace BookAPI.Data
     public class ChiTietHoaDon
     {
         [Key]
-        public int MaCT { get; set; }
+        public Guid MaCT { get; set; }
         [StringLength(50)]
-        public int MaHD{ get; set; }
+        public Guid MaHD { get; set; }
 
         [StringLength(50)]
         public string MaSach { get; set; }

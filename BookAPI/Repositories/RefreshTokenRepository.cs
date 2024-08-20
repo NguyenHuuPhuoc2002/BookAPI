@@ -1,4 +1,5 @@
 ﻿using BookAPI.Data;
+using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -8,9 +9,9 @@ namespace BookAPI.Repositories
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly DataContext _context;
-        private readonly ILogger<IRefreshTokenRepository> _logger;
+        private readonly ILogger<RefreshTokenRepository> _logger;
 
-        public RefreshTokenRepository(DataContext context, ILogger<IRefreshTokenRepository> logger) 
+        public RefreshTokenRepository(DataContext context, ILogger<RefreshTokenRepository> logger) 
         {
             _context = context;
             _logger = logger;

@@ -1,0 +1,13 @@
+﻿using BookAPI.Models;
+
+namespace BookAPI.Services.Interfaces
+{
+    public interface ISachService
+    {
+        Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize);
+        Task<SachModel> GetBookByIdAsync(string id);
+        Task<IEnumerable<SachModel>> SearchBookAsync(string key, int page, int pageSize);
+        Task<IEnumerable<SachModel>> SearchBookByNXBAsync(string key, int page, int pageSize);
+
+    }
+}

@@ -64,6 +64,25 @@ namespace BookAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "NhaXuatBan",
+                columns: table => new
+                {
+                    MaNXB = table.Column<int>(type: "int", maxLength: 50, nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TenNhaXuatBan = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Logo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    NguoiLienLac = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    DienThoai = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    DiaChi = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    MoTa = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_NhaXuatBan", x => x.MaNXB);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TrangThai",
                 columns: table => new
                 {
@@ -96,6 +115,30 @@ namespace BookAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RefreshToken",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MaKH = table.Column<string>(type: "nvarchar(50)", nullable: false),
+                    Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    JwtId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsUsed = table.Column<bool>(type: "bit", nullable: false),
+                    IsRevoked = table.Column<bool>(type: "bit", nullable: false),
+                    IssuedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiredAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshToken", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RefreshToken_KhachHang_MaKH",
+                        column: x => x.MaKH,
+                        principalTable: "KhachHang",
+                        principalColumn: "MaKH",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sach",
                 columns: table => new
                 {
@@ -110,7 +153,8 @@ namespace BookAPI.Migrations
                     MaLoai = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     SoLuongTon = table.Column<int>(type: "int", nullable: true),
                     MoTa = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
-                    MaNCC = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
+                    MaNCC = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    MaNXB = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -127,14 +171,19 @@ namespace BookAPI.Migrations
                         principalTable: "NhaCungCap",
                         principalColumn: "MaNCC",
                         onDelete: ReferentialAction.SetNull);
+                    table.ForeignKey(
+                        name: "FK_Sach_NhaXuatBan_MaNXB",
+                        column: x => x.MaNXB,
+                        principalTable: "NhaXuatBan",
+                        principalColumn: "MaNXB",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
                 name: "HoaDon",
                 columns: table => new
                 {
-                    MaHD = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MaHD = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     MaKH = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     NgayDat = table.Column<DateTime>(type: "datetime2", nullable: true),
                     NgayGiao = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -202,9 +251,8 @@ namespace BookAPI.Migrations
                 name: "ChiTietHoaDon",
                 columns: table => new
                 {
-                    MaCT = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    MaHD = table.Column<int>(type: "int", maxLength: 50, nullable: false),
+                    MaCT = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MaHD = table.Column<Guid>(type: "uniqueidentifier", maxLength: 50, nullable: false),
                     MaSach = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     DonGia = table.Column<double>(type: "float", nullable: false),
                     SoLuong = table.Column<int>(type: "int", nullable: false),
@@ -270,6 +318,11 @@ namespace BookAPI.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_RefreshToken_MaKH",
+                table: "RefreshToken",
+                column: "MaKH");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Sach_MaLoai",
                 table: "Sach",
                 column: "MaLoai");
@@ -278,6 +331,11 @@ namespace BookAPI.Migrations
                 name: "IX_Sach_MaNCC",
                 table: "Sach",
                 column: "MaNCC");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sach_MaNXB",
+                table: "Sach",
+                column: "MaNXB");
         }
 
         /// <inheritdoc />
@@ -288,6 +346,9 @@ namespace BookAPI.Migrations
 
             migrationBuilder.DropTable(
                 name: "ChiTietHoaDon");
+
+            migrationBuilder.DropTable(
+                name: "RefreshToken");
 
             migrationBuilder.DropTable(
                 name: "GioHang");
@@ -309,6 +370,9 @@ namespace BookAPI.Migrations
 
             migrationBuilder.DropTable(
                 name: "NhaCungCap");
+
+            migrationBuilder.DropTable(
+                name: "NhaXuatBan");
         }
     }
 }

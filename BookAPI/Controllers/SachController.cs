@@ -1,5 +1,6 @@
 ﻿using BookAPI.Data;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -10,10 +11,10 @@ namespace BookAPI.Controllers
     [ApiController]
     public class SachController : ControllerBase
     {
-        private readonly ISachRepository _sach;
+        private readonly ISachService _sach;
         private readonly ILogger<SachController> _logger;
 
-        public SachController(ISachRepository sach, ILogger<SachController> logger)
+        public SachController(ISachService sach, ILogger<SachController> logger)
         {
             _sach = sach;
             _logger = logger;
