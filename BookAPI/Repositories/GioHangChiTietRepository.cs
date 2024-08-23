@@ -41,9 +41,9 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy tất cả sách với mã GioHangId {id}", id);
-                var cartItem = _context.gioHangChiTiets.Where(p => p.GioHangId == id);
+                var cartItem = _context.GioHangChiTiets.Where(p => p.GioHangId == id);
                 _logger.LogInformation("Thực hiện xóa tất cả sách với mã GioHangId {id}", id);
-                _context.gioHangChiTiets.RemoveRange(cartItem);
+                _context.GioHangChiTiets.RemoveRange(cartItem);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Thực hiện xóa tất cả sách với mã GioHangId {id} thành công", id);
             }
@@ -61,7 +61,7 @@ namespace BookAPI.Repositories
                 if (cartItem != null)
                 {
                     _logger.LogInformation("Truy vấn lấy sách trong giỏ với mã sách {id}", cartItem.MaSach);
-                    var book = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.MaSach == cartItem.MaSach &&
+                    var book = await _context.GioHangChiTiets.SingleOrDefaultAsync(p => p.MaSach == cartItem.MaSach &&
                                                                                         p.GioHangId == cartItem.GioHangId);
                     if (book == null)
                     {
@@ -69,7 +69,7 @@ namespace BookAPI.Repositories
                     }
                     else
                     {
-                        _context.gioHangChiTiets.Remove(book);
+                        _context.GioHangChiTiets.Remove(book);
                         await _context.SaveChangesAsync();
                         _logger.LogInformation("Xóa sách trong giỏ thành công");
                     }
@@ -87,7 +87,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy tất cả sách với Id {id} trong giỏ", id);
-                var cart =  _context.gioHangChiTiets.Where(p => p.GioHangId == id);
+                var cart =  _context.GioHangChiTiets.Where(p => p.GioHangId == id);
 
                 var result = await cart.Select(p => new CartModel
                 {
@@ -117,7 +117,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy một sách với mã sách {maSach} trong giỏ", maSach);
-                var cart = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id &&
+                var cart = await _context.GioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id &&
                                                                                     p.MaSach == maSach);
 
                 if (cart == null)
@@ -140,7 +140,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy sách với Id {id} trong giỏ", id);
-                var cart = await _context.gioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id);
+                var cart = await _context.GioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id);
 
                 if (cart == null)
                 {
@@ -162,7 +162,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy sách trong giỏ bằng với GioHangChiTietId {id}", id);
-                var item = await _context.gioHangChiTiets.SingleOrDefaultAsync(p =>  p.GioHangChiTietId == id);
+                var item = await _context.GioHangChiTiets.SingleOrDefaultAsync(p =>  p.GioHangChiTietId == id);
                 
                 if (item == null)
                 {

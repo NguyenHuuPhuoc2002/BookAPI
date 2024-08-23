@@ -23,7 +23,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy tất cả loại");
-                var loais = await _context.loais.ToListAsync();
+                var loais = await _context.Loais.ToListAsync();
                 var result = loais.Select(p => new LoaiModel
                 {
                     MaLoai = p.MaLoai,
@@ -44,7 +44,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy loại theo mã {id}", id);
-                var loai = await _context.loais.SingleOrDefaultAsync(p => p.MaLoai == id);
+                var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == id);
 
                 if (loai == null)
                 {

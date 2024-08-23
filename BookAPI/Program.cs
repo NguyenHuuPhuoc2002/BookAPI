@@ -114,6 +114,7 @@ namespace BookAPI
             builder.Services.AddScoped<IGioHangChiTietRepository, GioHangChiTietRepository>();
             builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();

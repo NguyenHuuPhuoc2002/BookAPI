@@ -24,11 +24,11 @@ namespace BookAPI.Repositories
         public async Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize)
         {
             _logger.LogInformation("Xây dựng truy vấn sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
-            var listBook = _context.sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).AsQueryable();
+            var listBook = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).AsQueryable();
             if (!string.IsNullOrEmpty(maLoai))
             {
                 _logger.LogInformation("Truy vấn sách theo MaLoai: {maLoai}", maLoai);
-                listBook = _context.sachs.Where(p => p.MaLoai == maLoai);
+                listBook = _context.Sachs.Where(p => p.MaLoai == maLoai);
             }
 
             try
@@ -38,7 +38,7 @@ namespace BookAPI.Repositories
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count);
                 var result = (from s in data
-                              join nxb in _context.nhaXuatBans on s.MaNXB equals nxb.MaNXB
+                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
                               {
                                   MaSach = s.MaSach,
@@ -71,8 +71,8 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy sách với ID {id} ", id);
-                var result = await (from s in _context.sachs
-                                    join nxb in _context.nhaXuatBans on s.MaNXB equals nxb.MaNXB
+                var result = await (from s in _context.Sachs
+                                    join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                                     where s.MaSach == id.Trim()
                                     select new SachModel
                                     {
@@ -111,13 +111,13 @@ namespace BookAPI.Repositories
         {
             _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}",
                                     key, page, pageSize);
-            var books = _context.sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan)
+            var books = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(key))
             {
                 _logger.LogInformation("Truy vấn sách theo từ khóa: {key}", key);
-                books = _context.sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())
+                books = _context.Sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())
                     || p.TacGia.ToLower().Contains(key.ToLower().Trim()));
             }
             try
@@ -126,7 +126,7 @@ namespace BookAPI.Repositories
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
                 var result = (from s in data
-                              join nxb in _context.nhaXuatBans on s.MaNXB equals nxb.MaNXB
+                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
                               {
                                   MaSach = s.MaSach,
@@ -158,12 +158,12 @@ namespace BookAPI.Repositories
         {
             _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với theo NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}",
                                     key, page, pageSize);
-            var books = _context.sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).AsQueryable();
+            var books = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(key))
             {
                 _logger.LogInformation("Truy vấn sách theo NXB: {key}", key);
-                books = _context.sachs.Where(p => p.NhaXuatBan.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
+                books = _context.Sachs.Where(p => p.NhaXuatBan.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
             }
             try
             {
@@ -171,7 +171,7 @@ namespace BookAPI.Repositories
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
                 var result = (from s in data
-                              join nxb in _context.nhaXuatBans on s.MaNXB equals nxb.MaNXB
+                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
                               {
                                   MaSach = s.MaSach,

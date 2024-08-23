@@ -21,7 +21,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy thông tin khách hàng với {UserName} và {Password}", model.UserName, model.Password);
-                var khachHang = await _context.khachHangs.SingleOrDefaultAsync(p => p.MaKH == model.UserName &&
+                var khachHang = await _context.KhachHangs.SingleOrDefaultAsync(p => p.MaKH == model.UserName &&
                                                                               p.MatKhau == model.Password);
                 if (khachHang == null)
                 {
@@ -41,7 +41,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy thông tin khách hàng với {UserName}", maKH);
-                var khachHang = await _context.khachHangs.SingleOrDefaultAsync(p => p.MaKH == maKH);
+                var khachHang = await _context.KhachHangs.SingleOrDefaultAsync(p => p.MaKH == maKH);
                 if (khachHang == null)
                 {
                     _logger.LogWarning("Không tìm thấy khách hàng");

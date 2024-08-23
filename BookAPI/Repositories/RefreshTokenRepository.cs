@@ -37,7 +37,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy refreshToken");
-                var storedToken = await _context.refreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
+                var storedToken = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
                 if(storedToken == null)
                 {
                     _logger.LogWarning("Không tìm thấy refreshToken");
@@ -61,7 +61,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy refreshToken");
-                var storedToken = await _context.refreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
+                var storedToken = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
 
                 _logger.LogInformation("Thực hiện cập nhật token");
                 _context.Update(token);

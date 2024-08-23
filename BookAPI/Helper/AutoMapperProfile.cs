@@ -11,6 +11,7 @@ namespace BookAPI.Helper
             CreateMap<Sach, SachModel>().ReverseMap();
             CreateMap<Loai, LoaiModel>().ReverseMap();
             CreateMap<GioHangChiTiet, CartModel>().ReverseMap();
+            CreateMap<HoaDon, HoaDonModel>().ReverseMap();
         }
 
     }

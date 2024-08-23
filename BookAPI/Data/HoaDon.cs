@@ -25,11 +25,11 @@ namespace BookAPI.Data
         public string DienThoai { get; set; }
 
         [StringLength(50)]
-        public string CachThanhToan { get; set; }
+        public string? CachThanhToan { get; set; }
 
         [StringLength(50)]
-        public string CachVanChuyen { get; set; }
-        public string PhiVanChuyen { get; set; }
+        public string? CachVanChuyen { get; set; }
+        public double? PhiVanChuyen { get; set; }
         public string? MaNV { get; set; }
 
         [StringLength(200)]

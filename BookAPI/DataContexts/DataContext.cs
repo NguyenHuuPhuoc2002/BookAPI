@@ -10,17 +10,17 @@ namespace BookAPI.Database
         }
 
         #region DbSet
-        public DbSet<Loai> loais { get; set; }
-        public DbSet<Sach> sachs { get; set; }
-        public DbSet<NhaCungCap> nhaCungCaps { get; set; }
-        public DbSet<HoaDon> hoaDons { get; set; }
-        public DbSet<ChiTietHoaDon> chiTietHoaDons { get; set; }
-        public DbSet<KhachHang> khachHangs { get; set; }
-        public DbSet<TrangThai> trangThais { get; set; }
-        public DbSet<GioHang> gioHangs { get; set; }
-        public DbSet<NhaXuatBan> nhaXuatBans { get; set; }
-        public DbSet<GioHangChiTiet> gioHangChiTiets { get; set; }
-        public DbSet<RefreshToken> refreshTokens { get; set; }
+        public DbSet<Loai> Loais { get; set; }
+        public DbSet<Sach> Sachs { get; set; }
+        public DbSet<NhaCungCap> NhaCungCaps { get; set; }
+        public DbSet<HoaDon> HoaDons { get; set; }
+        public DbSet<ChiTietHoaDon> ChiTietHoaDons { get; set; }
+        public DbSet<KhachHang> KhachHangs { get; set; }
+        public DbSet<TrangThai> TrangThais { get; set; }
+        public DbSet<GioHang> GioHangs { get; set; }
+        public DbSet<NhaXuatBan> NhaXuatBans { get; set; }
+        public DbSet<GioHangChiTiet> GioHangChiTiets { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

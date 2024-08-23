@@ -1,4 +1,5 @@
 ﻿using BookAPI.Data;
+using BookAPI.Models;
 
 namespace BookAPI.Repositories.Interfaces
 {
@@ -8,5 +9,10 @@ namespace BookAPI.Repositories.Interfaces
         Task<GioHang> GetCartByIdAsync(int id);
         Task<GioHang> GetCartByMaKhAsync(string maKh);
         Task AddAsync(GioHang cart);
+        Task AddHoaDonAsync(HoaDon model);
+        Task AddRangeChiTietHdAsync(IEnumerable<ChiTietHoaDon> cthds);
+        Task BeginTransactionAsync();
+        Task CommitTransactionAsync();
+        Task RollbackTransactionAsync();
     }
 }

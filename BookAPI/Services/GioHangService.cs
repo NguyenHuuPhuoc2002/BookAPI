@@ -1,6 +1,8 @@
 ﻿using BookAPI.Data;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace BookAPI.Services
 {
@@ -30,6 +32,28 @@ namespace BookAPI.Services
         public async Task<GioHang> GetCartByMaKhAsync(string maKh)
         {
             return await _cart.GetCartByMaKhAsync(maKh);
+        }
+        public async Task AddRangeChiTietHdAsync(IEnumerable<ChiTietHoaDon> cthds)
+        {
+            await _cart.AddRangeChiTietHdAsync(cthds);
+        }
+        public async Task AddHoaDonAsync(HoaDon model)
+        {
+            await _cart.AddHoaDonAsync(model);
+        }
+        public async Task BeginTransactionAsync()
+        {
+            await _cart.BeginTransactionAsync();
+        }
+
+        public async Task CommitTransactionAsync()
+        {
+            await _cart.RollbackTransactionAsync();
+        }
+
+        public async Task RollbackTransactionAsync()
+        {
+            await _cart.RollbackTransactionAsync();
         }
     }
 }
