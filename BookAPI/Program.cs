@@ -115,6 +115,7 @@ namespace BookAPI
             builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
+            builder.Services.AddScoped<IChiTietHoaDonRepository, ChiTietHoaDonRepository>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();
@@ -123,6 +124,8 @@ namespace BookAPI
             builder.Services.AddScoped<IKhachHangService, KhachHangService>();
             builder.Services.AddScoped<IGioHangService, GioHangService>();
             builder.Services.AddScoped<IGioHangChiTietService, GioHangChiTietService>();
+            builder.Services.AddScoped<IHoaDonService, HoaDonService>();
+            builder.Services.AddScoped<IChiTietHoaDonService, ChiTietHoaDonService>();
 
             // Đăng ký AutoMapper
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile));

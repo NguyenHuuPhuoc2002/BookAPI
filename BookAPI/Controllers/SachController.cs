@@ -1,4 +1,5 @@
 ﻿using BookAPI.Data;
+using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,14 @@ namespace BookAPI.Controllers
         {
             try
             {
+                if (page <= 0 || pageSize <= 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Số trang và kích thước trang phải lớn hơn 0.",
+                    });
+                }
                 int pageIndex = page ?? 1;
                 int pSize = pageSize ?? 9;
                 _logger.LogInformation("Nhận yêu cầu HTTP lấy sách theo mã loại {maLoai} (nếu có) còn không thì lấy danh sách sách , Trang: {pageIndex}, Kích thước trang: {pSize}", maLoai, pageIndex, pSize);
@@ -33,10 +42,10 @@ namespace BookAPI.Controllers
                 _logger.LogInformation("Trả về danh sách sách thành công, số lượng: {books}", books.Count());
                 return Ok(books);
             }
-            catch
+            catch (Exception ex)
             {
-                _logger.LogError("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy tất cả sách");
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi xử lý yêu cầu HTTP lấy tất cả sách");
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
 
@@ -70,6 +79,14 @@ namespace BookAPI.Controllers
         {
             try
             {
+                if (page <= 0 || pageSize <= 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Số trang và kích thước trang phải lớn hơn 0.",
+                    });
+                }
                 int pageIndex = page ?? 1;
                 int pSize = pageSize ?? 9;
 
@@ -91,6 +108,14 @@ namespace BookAPI.Controllers
         {
             try
             {
+                if (page <= 0 || pageSize <= 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Số trang và kích thước trang phải lớn hơn 0.",
+                    });
+                }
                 int pageIndex = page ?? 1;
                 int pSize = pageSize ?? 9;
 

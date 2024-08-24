@@ -21,14 +21,14 @@ namespace BookAPI.Repositories
             _logger = logger;
         }
 
-        public async Task<HoaDonModel> GetHoaDonByIdAsync(Guid id)
+        public async Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh)
         {
-            var order = await _context.HoaDons.SingleOrDefaultAsync(hd => hd.MaHD == id);
+            var order = await _context.HoaDons.SingleOrDefaultAsync(hd => hd.MaHD == id && hd.MaKH == maKh);
             var result = _mapper.Map<HoaDonModel>(order);
             return result;
         }
 
-        public async Task<IEnumerable<HoaDonModel>> GetOdersAsync(string maKh,int page, int pageSize)
+        public async Task<IEnumerable<HoaDonModel>> GetOrdersByMaKhAsync(string maKh,int page, int pageSize)
         {
             try
             {

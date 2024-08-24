@@ -1,8 +1,11 @@
 ﻿using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace BookAPI.Controllers
 {
@@ -10,19 +13,83 @@ namespace BookAPI.Controllers
     [ApiController]
     public class DonHangController : ControllerBase
     {
-        private readonly IHoaDonRepository _hoaDon;
+        private readonly IHoaDonService _hoaDon;
+        private readonly ILogger<DonHangController> _logger;
+        private readonly IChiTietHoaDonService _hoaDonCT;
 
-        public DonHangController(IHoaDonRepository hoaDon) 
+        public DonHangController(IHoaDonService hoaDon, ILogger<DonHangController> logger,
+                                IChiTietHoaDonService hoaDonCT) 
         {
             _hoaDon = hoaDon;
+            _logger = logger;
+            _hoaDonCT = hoaDonCT;
         }
 
         [HttpPost("orders")]
-        public async Task<IActionResult> GetOrders(HoaDonModel model)
+        [Authorize]
+        public async Task<IActionResult> GetOrders(int? page, int? pageSize)
         {
             var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
-           // await _hoaDon.AddAsync(model);
-            return Ok();
+            _logger.LogInformation("Yêu cầu lấy hóa đơn của khách hàng {maKh}", maKh);
+            try
+            {
+                if (page <= 0 || pageSize <= 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Số trang và kích thước trang phải lớn hơn 0.",
+                    });
+                }
+                int _page = page ?? 1;
+                int _pageSize = pageSize ?? 5;
+                var oders = await _hoaDon.GetOrdersByMaKhAsync(maKh, _page, _pageSize);
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Lấy tất cả đơn hàng thành công",
+                    Data = oders
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Yêu cầu lấy hóa đơn không thành công");
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+        [HttpGet("order-detail")]
+        [Authorize]
+        public async Task<IActionResult> GetOrderDetail(Guid id)
+        {
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            try
+            {
+                var order = await _hoaDon.GetOrderByIdAsync(id, maKh);
+                if (order == null)
+                {
+                    _logger.LogWarning("Không tìm thấy đơn hàng của khách hàng {maKh} với mã HD {maHD}", maKh, id);
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Không tìm thấy đơn hàng của khách hàng {maKh} với mã HD {id}"
+                    });
+                }
+                _logger.LogInformation("Yêu cầu lấy chi tiết hóa đơn của khách hàng {maKh} có mã HD {maHD}", maKh, order.MaHD);
+                var ordersDetail = await _hoaDonCT.GetAllAsync(order.MaHD);
+
+                _logger.LogInformation("Yêu cầu lấy chi tiết hóa đơn của khách hàng {maKh} có mã HD {maHD} thành công", maKh, order.MaHD);
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Lấy chi tiết hóa đơn thành công",
+                    Data = ordersDetail
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Yêu cầu lấy chi tiết hóa đơn không thành công");
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
     }
 }

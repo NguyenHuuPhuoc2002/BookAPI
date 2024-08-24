@@ -1,13 +1,10 @@
-﻿using BookAPI.Data;
-using BookAPI.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using BookAPI.Models;
 
-namespace BookAPI.Repositories.Interfaces
+namespace BookAPI.Services.Interfaces
 {
-    public interface IHoaDonRepository
+    public interface IHoaDonService
     {
         Task<IEnumerable<HoaDonModel>> GetOrdersByMaKhAsync(string maKh, int page, int pageSize);
         Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh);
-        
     }
 }
