@@ -126,8 +126,6 @@ namespace BookAPI.Controllers
                 return Convert.ToBase64String(random);
             }
         }
-
-
         [HttpPost("renewToken")]
         public async Task<IActionResult> RenewToken(TokenModel tokenModel)
         {
