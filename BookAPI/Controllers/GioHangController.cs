@@ -60,7 +60,6 @@ namespace BookAPI.Controllers
         {
             try
             {
-                var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
                 _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKH);
                 var cart = await _cart.GetCartByMaKhAsync(maKH) ?? await CreateCartAsync(maKH);
                 _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
@@ -135,7 +134,6 @@ namespace BookAPI.Controllers
                     _logger.LogWarning("Không tìm thấy sách với mã {BookId}", id);
                     return NotFound();
                 }
-                var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
 
                 if(cartItem != null)
                 {
@@ -179,7 +177,6 @@ namespace BookAPI.Controllers
                     return NotFound();
                 }
 
-                //Lấy một sách trong giỏ hàng chi tiết bằng mã sách và mã giỏ hàng
                 var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
                 if (cartItem == null)
                 {
