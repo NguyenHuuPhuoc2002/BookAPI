@@ -1,4 +1,5 @@
-﻿using BookAPI.Data;
+﻿using AutoMapper;
+using BookAPI.Data;
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -20,15 +22,17 @@ namespace BookAPI.Controllers
     public class KhachHangController : ControllerBase
     {
         private readonly IKhachHangService _khachHang;
+        private readonly IMapper _mapper;
         private readonly ILogger<KhachHangController> _logger;
         private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
         private SecurityToken validatedToken;
 
-        public KhachHangController(IKhachHangService khachHang, ILogger<KhachHangController> logger,
+        public KhachHangController(IKhachHangService khachHang, ILogger<KhachHangController> logger, IMapper mapper,
                                     IOptionsMonitor<AppSetting> optionsMonitor, IRefreshTokenService refreshToken)
         {
             _khachHang = khachHang;
+            _mapper = mapper;
             _logger = logger;
             _refreshToken = refreshToken;
             _appSettings = optionsMonitor.CurrentValue;
@@ -37,11 +41,22 @@ namespace BookAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> LogIn(LogInModel model)
         {
-            _logger.LogInformation("Thực hiện đăng nhập với tên đăng nhập {UserName} và mật khẩu {Password}", model.UserName, model.Password);
-            var login = await _khachHang.CheckLogIn(model);
+            var getKhachHang = await _khachHang.GetUserById(model.UserName);
+            if(getKhachHang == null)
+            {
+                _logger.LogWarning("Không tìm thấy khách hàng {maKH}", model.UserName);
+                return NotFound();
+            }
+            var khacHang = new LogInModel
+            {
+                UserName = model.UserName,
+                Password = model.Password.ToMd5Hash(getKhachHang.RandomKey),
+            };
+            _logger.LogInformation("Thực hiện đăng nhập với tên đăng nhập {UserName}", model.UserName);
+            var login = await _khachHang.CheckLogIn(khacHang);
             if (login == null)
             {
-                _logger.LogWarning("Không tìm thấy khách hàng với tên đăng nhập {UserName} và mật khẩu {Password}", model.UserName, model.Password);
+                _logger.LogWarning("Không tìm thấy khách hàng với tên đăng nhập {UserName}", model.UserName);
                 return NotFound(new ApiResponse
                 {
                     Success = false,
@@ -60,7 +75,51 @@ namespace BookAPI.Controllers
             });
 
         }
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromForm] KhachHangModel user)
+        {
+            try
+            {
+                _logger.LogInformation("Yêu cầu đăng kí từ khách hàng");
+                var khachHang = _mapper.Map<KhachHang>(user);
+                //ramdom sinh mã ngẫu nhiên
+                khachHang.RandomKey = MyUntil.GenerateRamdomKey();
+                khachHang.MatKhau = user.MatKhau.ToMd5Hash(khachHang.RandomKey);
+                khachHang.HieuLuc = true;// xử lí khi dùng mail để active
+                khachHang.VaiTro = 0;
 
+                if (user.Image.Length > 0)
+                {
+                    var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "KhachHang", user.Image.FileName);
+                    using (var stream = System.IO.File.Create(path))
+                    {
+                        await user.Image.CopyToAsync(stream);
+                    }
+                    khachHang.Hinh = "/images/KhachHang/" + user.Image.FileName;
+                }
+                else
+                {
+                    khachHang.Hinh = "";
+                }
+                await _khachHang.Register(khachHang);
+                _logger.LogInformation("Yêu cầu đăng kí từ khách hàng thành công");
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Đăng kí thành công",
+                    Data = user
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Đã xảy ra lỗi khi đăng ký khách hàng");
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
+        }
         private async Task<TokenModel> GenerateToken(KhachHang user)
         {
             _logger.LogInformation("Bắt đầu tạo token cho khách hàng: {UserId}", user.MaKH);
@@ -83,7 +142,7 @@ namespace BookAPI.Controllers
                 Expires = DateTime.UtcNow.AddMinutes(10), //Thời gian hết hạn
 
                 //Xác thực chữ kí của token bằng khóa bí mật và thuật toán HMAC-SHA512.
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes), 
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKeyBytes),
                                                             SecurityAlgorithms.HmacSha512Signature)
             };
 

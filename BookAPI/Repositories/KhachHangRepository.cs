@@ -55,5 +55,21 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
+
+        public async Task Register(KhachHang user)
+        {
+            try
+            {
+                _logger.LogInformation("Thêm user vào csdl");
+                await _context.KhachHangs.AddAsync(user);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thêm user vào csdl thành công");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thêm user vào csdl");
+                throw;
+            }
+        }
     }
 }

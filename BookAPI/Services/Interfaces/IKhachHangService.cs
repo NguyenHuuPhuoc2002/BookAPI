@@ -7,5 +7,6 @@ namespace BookAPI.Services.Interfaces
     {
         Task<KhachHang> CheckLogIn(LogInModel model);
         Task<KhachHang> GetUserById(string maKH);
+        Task Register(KhachHang user);
     }
 }

@@ -22,5 +22,10 @@ namespace BookAPI.Services
         {
             return await _khachHang.GetUserById(maKH);
         }
+
+        public async Task Register(KhachHang user)
+        {
+            await _khachHang.Register(user);
+        }
     }
 }

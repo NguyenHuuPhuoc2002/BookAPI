@@ -65,5 +65,23 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
+
+        public async Task UpdateOrderStateAsync(Guid id, int state)
+        {
+            try
+            {
+                var order = await _context.HoaDons.SingleOrDefaultAsync(p => p.MaHD == id);
+                _logger.LogInformation("Thực hiện cập nhật trạng thái của đơn hàng {maHD}", id);
+                order.MaTrangThai = state;
+                var result = _context.HoaDons.Update(order);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện cập nhật trạng thái của đơn hàng {maHD}", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện cập nhật trạng thái đơn hàng");
+                throw;
+            }
+        }
     }
 }

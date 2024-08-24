@@ -91,5 +91,27 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
+
+        [HttpPut("cancel-order")]
+        [Authorize]
+        public async Task<IActionResult> CancelOrder(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("Yêu cầu hủy đơn hàng có mã hóa đơn {maHD}", id);
+                await _hoaDon.UpdateOrderStateAsync(id, MyConstants.STATE_CANCELED_ORDER);
+                _logger.LogInformation("Yêu cầu hủy đơn hàng có mã hóa đơn {maHD} thành công", id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi hủy đơn hàng");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
+                });
+            }
+        }
     }
 }

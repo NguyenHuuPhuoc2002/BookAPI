@@ -8,6 +8,7 @@ namespace BookAPI.Repositories.Interfaces
     {
         Task<IEnumerable<HoaDonModel>> GetOrdersByMaKhAsync(string maKh, int page, int pageSize);
         Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh);
+        Task UpdateOrderStateAsync(Guid id, int state);
         
     }
 }
