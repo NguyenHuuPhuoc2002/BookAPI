@@ -12,6 +12,9 @@ using System;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using AutoMapper;
+using EcommerceWeb.ViewModels;
+using EcommerceWeb.Services;
+using Azure;
 
 namespace BookAPI.Controllers
 {
@@ -24,8 +27,9 @@ namespace BookAPI.Controllers
         private readonly ILogger<GioHangController> _logger;
         private readonly ISachService _sach;
         private readonly IMapper _mapper;
-
-        public GioHangController(IGioHangService cart, IGioHangChiTietService cartItem,
+        private readonly IVnPayService _vnPayService;
+        private static CheckoutModel _model { get; set; }
+        public GioHangController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
                                 ILogger<GioHangController> logger, ISachService sach, IMapper mapper)
         {
             _cart = cart;
@@ -33,6 +37,7 @@ namespace BookAPI.Controllers
             _logger = logger;
             _sach = sach;
             _mapper = mapper;
+            _vnPayService = vnPayService;
         }
 
         [HttpGet("carts")]
@@ -230,7 +235,7 @@ namespace BookAPI.Controllers
             try
             {
                 _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKH, id, amount);
-                var cart = await _cart.GetCartByMaKhAsync(maKH); 
+                var cart = await _cart.GetCartByMaKhAsync(maKH);
 
                 if (cart == null)
                 {
@@ -242,7 +247,7 @@ namespace BookAPI.Controllers
                     });
                 }
 
-                var book = await _sach.GetBookByIdAsync(id); 
+                var book = await _sach.GetBookByIdAsync(id);
 
                 if (book == null)
                 {
@@ -312,10 +317,30 @@ namespace BookAPI.Controllers
         {
             if (ModelState.IsValid)
             {
+                _model = model;
                 var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
                 _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", maKh);
                 var cart = await _cart.GetCartByMaKhAsync(maKh);
                 var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
+
+                if (payment == MyConstants.PAYMENT_VNPAY)
+                {
+                    var vnPayModel = new VnPaymentRequestMode
+                    {
+                        Amount = cartItems.Sum(p => p.ThanhTien),
+                        CreatedDate = DateTime.Now,
+                        Description = $"{model.HoTen} {model.SoDienThoai}",
+                        FullName = model.HoTen,
+                        OrderId = new Random().Next(1000, 10000)
+                    };
+                    var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, vnPayModel);
+                    return Ok(new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Ok",
+                        Data = paymentUrl
+                    });
+                }
 
                 _logger.LogInformation("Tạo đơn hàng cho khách hàng {maKh}", maKh);
                 #region Tạo Đơn Hàng
@@ -357,6 +382,14 @@ namespace BookAPI.Controllers
                         });
                     }
                     await _cart.AddRangeChiTietHdAsync(cthds);
+
+                    var dictionary = new Dictionary<string, int>();
+                    foreach (var item in cartItems)
+                    {
+                        dictionary[item.MaSach] = item.SoLuong;
+                    }
+                    await _sach.UpdateInventoryQuantity(dictionary);
+
                     _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
                     await _cartItem.ClearAllAsync(cart.GioHangId);
                     _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", maKh);
@@ -371,9 +404,90 @@ namespace BookAPI.Controllers
                     _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", maKh);
                     return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
                 }
+                #endregion
             }
             _logger.LogError("Dữ liệu không hợp lệ khi thanh toán đơn hàng");
             return BadRequest();
+        }
+
+        [Authorize]
+        [HttpGet("[action]")]
+        public async Task<IActionResult> PaymentCallBack()
+        {
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
+            var response = _vnPayService.PaymentExecute(Request.Query);
+            if (response == null)
+            {
+                return NotFound();
+            }
+            else if (response.VnPayResponseCode != "00")
+            {
+                return BadRequest();
+            }
+            #region Tạo Đơn Hàng
+            var khacHang = new KhachHang();
+            var hoaDon = new HoaDon
+            {
+                MaKH = maKh,
+                HoTen = _model.HoTen,
+                DiaChi = _model.DiaChi,
+                DienThoai = _model.SoDienThoai,
+                NgayDat = DateTime.Now,
+                NgayGiao = DateTime.Now.AddDays(3),
+                CachThanhToan = MyConstants.PAYMENT_VNPAY,
+                CachVanChuyen = MyConstants.SHIPPING_WAY,
+                PhiVanChuyen = MyConstants.SHIPPING_FEE,
+                MaTrangThai = MyConstants.STATE_NEW_ORDER,
+                GhiChu = _model.GhiChu,
+                TongTien = cartItems.Sum(p => p.SoLuong * p.DonGia)
+            };
+
+            await _cart.BeginTransactionAsync();
+            try
+            {
+                await _cart.CommitTransactionAsync();
+                await _cart.AddHoaDonAsync(hoaDon);
+                _logger.LogInformation("Thêm đơn hàng thành công");
+
+                _logger.LogInformation("Thêm chi tiết đơn hàng");
+                var cthds = new List<ChiTietHoaDon>();
+                foreach (var item in cartItems)
+                {
+                    cthds.Add(new ChiTietHoaDon
+                    {
+                        MaHD = hoaDon.MaHD,
+                        SoLuong = item.SoLuong,
+                        DonGia = item.DonGia,
+                        MaSach = item.MaSach,
+                        GiamGia = 0
+                    });
+                }
+                await _cart.AddRangeChiTietHdAsync(cthds);
+
+                var dictionary = new Dictionary<string, int>();
+                foreach (var item in cartItems)
+                {
+                    dictionary[item.MaSach] = item.SoLuong;
+                }
+                await _sach.UpdateInventoryQuantity(dictionary);
+
+                _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
+                await _cartItem.ClearAllAsync(cart.GioHangId);
+                _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", maKh);
+
+                _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", maKh);
+                var order = _mapper.Map<HoaDonModel>(hoaDon);
+                return Ok(order);
+            }
+            catch (Exception ex)
+            {
+                await _cart.RollbackTransactionAsync();
+                _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", maKh);
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+            #endregion
         }
     }
 }

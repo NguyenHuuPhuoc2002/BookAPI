@@ -5,6 +5,7 @@
         public const string CLAIM_USER_NAME = "UserName";
         public const string CLAIM_CUSTOMER_ID = "CustomerID";
         public const string PAYMENT_COD = "COD";
+        public const string PAYMENT_VNPAY = "VNPay";
         public const string SHIPPING_WAY = "GRAB";
         public const double SHIPPING_FEE = 30000;
         public const int STATE_CANCELED_ORDER = 1;

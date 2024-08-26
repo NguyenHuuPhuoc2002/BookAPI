@@ -70,5 +70,28 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
+        public async Task ChangePassword(KhachHangModel model)
+        {
+            try
+            {
+                _logger.LogInformation("Thực hiện thay đổi mật khẩu cho khách hàng");
+                var user = await _context.KhachHangs.SingleOrDefaultAsync(p => p.MaKH.Equals(model.MaKH));
+                user.MatKhau = model.MatKhau;
+                _context.KhachHangs.Update(user);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện thay đổi mật khẩu cho khách hàng thành công");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi cập nhật mật khẩu");
+                throw;
+            }
+        }
+
+
+        public Task EditProfile(KhachHangModel user)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

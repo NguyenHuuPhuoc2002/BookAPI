@@ -1,4 +1,5 @@
 ﻿using BookAPI.Models;
+using Newtonsoft.Json.Linq;
 
 namespace BookAPI.Repositories.Interfaces
 {
@@ -8,6 +9,7 @@ namespace BookAPI.Repositories.Interfaces
         Task<SachModel> GetBookByIdAsync(string id);
         Task<IEnumerable<SachModel>> SearchBookAsync(string key, int page, int pageSize);
         Task<IEnumerable<SachModel>> SearchBookByNXBAsync(string key, int page, int pageSize);
+        Task UpdateInventoryQuantity(Dictionary<string, int> books);
 
     }
 }

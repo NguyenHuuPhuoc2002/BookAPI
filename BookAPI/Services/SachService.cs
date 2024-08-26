@@ -35,5 +35,10 @@ namespace BookAPI.Services
         {
             return await _sach.SearchBookByNXBAsync(key, page, pageSize);
         }
+
+        public async Task UpdateInventoryQuantity(Dictionary<string, int> books)
+        {
+            await _sach.UpdateInventoryQuantity(books);
+        }
     }
 }

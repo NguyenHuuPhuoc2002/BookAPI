@@ -4,12 +4,14 @@ using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -42,7 +44,7 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> LogIn(LogInModel model)
         {
             var getKhachHang = await _khachHang.GetUserById(model.UserName);
-            if(getKhachHang == null)
+            if (getKhachHang == null)
             {
                 _logger.LogWarning("Không tìm thấy khách hàng {maKH}", model.UserName);
                 return NotFound();
@@ -114,6 +116,45 @@ namespace BookAPI.Controllers
             {
                 _logger.LogError(ex, "Đã xảy ra lỗi khi đăng ký khách hàng");
                 return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
+        }
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(string oldPassword, string newPassword)
+        {
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var khachHang = await _khachHang.GetUserById(maKh);
+            if (khachHang == null)
+            {
+                return NotFound(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Không tìm thấy khách hàng"
+                });
+            }
+            if (khachHang.MatKhau != oldPassword.ToMd5Hash(khachHang.RandomKey))
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Mật khẩu không khớp"
+                });
+            }
+            try
+            {
+                var user = _mapper.Map<KhachHangModel>(khachHang);
+                user.MatKhau = newPassword.ToMd5Hash(khachHang.RandomKey);
+                await _khachHang.ChangePassword(user);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Yêu cầu đổi mật khẩu cho khách hàng {maKH} xảy ra lỗi", maKh);
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
                 {
                     Success = false,
                     Message = ex.Message

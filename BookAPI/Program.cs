@@ -5,6 +5,7 @@ using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services;
 using BookAPI.Services.Interfaces;
+using EcommerceWeb.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +33,15 @@ namespace BookAPI
                 .CreateLogger();
 
             var builder = WebApplication.CreateBuilder(args);
+
+            //CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAllOrigins",
+                    builder => builder.AllowAnyOrigin()
+                                      .AllowAnyMethod()
+                                      .AllowAnyHeader());
+            });
 
             #region Authentication
             //token
@@ -126,6 +136,7 @@ namespace BookAPI
             builder.Services.AddScoped<IGioHangChiTietService, GioHangChiTietService>();
             builder.Services.AddScoped<IHoaDonService, HoaDonService>();
             builder.Services.AddScoped<IChiTietHoaDonService, ChiTietHoaDonService>();
+            builder.Services.AddSingleton<IVnPayService, VnPayService>();
 
             // Đăng ký AutoMapper
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
@@ -141,7 +152,7 @@ namespace BookAPI
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
                 });
             }
-
+            app.UseCors("AllowAllOrigins"); // Apply CORS policy
             app.UseHttpsRedirection();
 
             app.UseAuthentication();

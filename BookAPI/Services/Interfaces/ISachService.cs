@@ -8,6 +8,6 @@ namespace BookAPI.Services.Interfaces
         Task<SachModel> GetBookByIdAsync(string id);
         Task<IEnumerable<SachModel>> SearchBookAsync(string key, int page, int pageSize);
         Task<IEnumerable<SachModel>> SearchBookByNXBAsync(string key, int page, int pageSize);
-
+        Task UpdateInventoryQuantity(Dictionary<string, int> books);
     }
 }

@@ -13,6 +13,12 @@ namespace BookAPI.Services
         {
             _khachHang = khachHang;
         }
+
+        public async Task ChangePassword(KhachHangModel user)
+        {
+            await _khachHang.ChangePassword(user);
+        }
+
         public async Task<KhachHang> CheckLogIn(LogInModel model)
         {
             return await _khachHang.CheckLogIn(model);

@@ -57,7 +57,7 @@ namespace BookAPI.Repositories
 
                               }).OrderByDescending(p => p.NgayNhap);
 
-                _logger.LogInformation("Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}",maLoai, page, pageSize);
+                _logger.LogInformation("Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
                 return result;
             }
             catch (Exception ex)
@@ -196,6 +196,39 @@ namespace BookAPI.Repositories
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Đã xảy ra lỗi khi truy vấn tìm kiếm sách với NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}", key, page, pageSize);
+                throw;
+            }
+        }
+        public async Task UpdateInventoryQuantity(Dictionary<string, int> books)
+        {
+            _logger.LogInformation("Thực hiện cập nhật số lượng tồn");
+            var bookIds = books.Keys.ToList();
+            try
+            {
+                var booksToUpdate = await _context.Sachs
+                                            .Where(b => bookIds.Contains(b.MaSach))
+                                            .ToListAsync();
+                foreach (var book in booksToUpdate)
+                {
+                    // Nếu mã sách (book.MaSach) tồn tại trong dictionary, cập nhật số lượng tồn kho
+                    if (books.TryGetValue(book.MaSach, out int quantity))
+                    {
+                        book.SoLuongTon -= quantity;
+
+                        if (book.SoLuongTon < 0)
+                        {
+                            _logger.LogWarning("Số lượng tồn của sách {maSach} đã hết", book.MaSach);
+                            throw new Exception($"Số lượng tồn kho không đủ cho sách với mã ID {book.MaSach}. Số lượng tồn kho hiện tại: {book.SoLuongTon}");
+
+                        }
+                    }
+                }
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện cập nhật số lượng tồn thành công");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi thực hiện cập nhật số lượng tồn");
                 throw;
             }
         }

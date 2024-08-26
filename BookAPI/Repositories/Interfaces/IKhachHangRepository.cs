@@ -8,5 +8,7 @@ namespace BookAPI.Repositories.Interfaces
         Task<KhachHang> CheckLogIn(LogInModel model);
         Task<KhachHang> GetUserById(string maKH);
         Task Register(KhachHang user);
+        Task ChangePassword(KhachHangModel user);
+        Task EditProfile(KhachHangModel user);
     }
 }
