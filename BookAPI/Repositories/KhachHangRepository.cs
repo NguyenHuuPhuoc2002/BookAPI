@@ -55,7 +55,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task Register(KhachHang user)
         {
             try

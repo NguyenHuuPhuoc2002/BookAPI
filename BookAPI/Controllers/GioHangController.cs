@@ -312,7 +312,6 @@ namespace BookAPI.Controllers
         {
             if (ModelState.IsValid)
             {
-
                 var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
                 _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", maKh);
                 var cart = await _cart.GetCartByMaKhAsync(maKh);
@@ -336,7 +335,6 @@ namespace BookAPI.Controllers
                     GhiChu = model.GhiChu,
                     TongTien = cartItems.Sum(p => p.SoLuong * p.DonGia)
                 };
-                #endregion
 
                 await _cart.BeginTransactionAsync();
                 try
