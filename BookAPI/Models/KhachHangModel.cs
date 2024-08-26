@@ -4,7 +4,6 @@ namespace BookAPI.Models
 {
     public class KhachHangModel
     {
-        public string MaKH { get; set; }
         public string MatKhau { get; set; }
         public string HoTen { get; set; }
         public int? GioiTinh { get; set; }

@@ -87,8 +87,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
-
         public Task EditProfile(KhachHangModel user)
         {
             throw new NotImplementedException();
