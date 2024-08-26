@@ -90,7 +90,7 @@ namespace BookAPI.Controllers
                 khachHang.HieuLuc = true;// xử lí khi dùng mail để active
                 khachHang.VaiTro = 0;
 
-                if (user.Image.Length > 0)
+                if (user.Image != null)
                 {
                     var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "KhachHang", user.Image.FileName);
                     using (var stream = System.IO.File.Create(path))
@@ -127,9 +127,11 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> ChangePassword(string oldPassword, string newPassword)
         {
             var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            _logger.LogInformation("Yêu cầu đổi mật khẩu từ khách hàng {maKH}", maKh);
             var khachHang = await _khachHang.GetUserById(maKh);
             if (khachHang == null)
             {
+                _logger.LogWarning("Không tìm thấy khách hàng {maKH}", maKh);
                 return NotFound(new ApiResponse
                 {
                     Success = false,
@@ -138,6 +140,7 @@ namespace BookAPI.Controllers
             }
             if (khachHang.MatKhau != oldPassword.ToMd5Hash(khachHang.RandomKey))
             {
+                _logger.LogWarning("Mật khẩu nhập vào không khớp với mật khẩu cũ");
                 return BadRequest(new ApiResponse
                 {
                     Success = false,
@@ -149,6 +152,7 @@ namespace BookAPI.Controllers
                 var user = _mapper.Map<KhachHangModel>(khachHang);
                 user.MatKhau = newPassword.ToMd5Hash(khachHang.RandomKey);
                 await _khachHang.ChangePassword(user);
+                _logger.LogInformation("Yêu cầu đổi mật khẩu từ khách hàng {maKH} thành công", maKh);
                 return NoContent();
             }
             catch (Exception ex)
@@ -158,6 +162,27 @@ namespace BookAPI.Controllers
                 {
                     Success = false,
                     Message = ex.Message
+                });
+            }
+        }
+        [HttpPut("edit-profile")]
+        [Authorize]
+        public async Task<IActionResult> EditProfile(KhachHangProfileModel model)
+        {
+            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            try
+            {
+                _logger.LogInformation("Yêu cầu cập nhật thông tin từ khách hàng {maKh}", maKh);
+                await _khachHang.EditProfile(model, maKh);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Yêu cập cập nhật thông tin khách hàng không thành công");
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message,
                 });
             }
         }

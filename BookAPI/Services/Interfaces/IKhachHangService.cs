@@ -9,5 +9,6 @@ namespace BookAPI.Services.Interfaces
         Task<KhachHang> GetUserById(string maKH);
         Task Register(KhachHang user);
         Task ChangePassword(KhachHangModel user);
+        Task EditProfile(KhachHangProfileModel profile, string maKh);
     }
 }

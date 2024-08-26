@@ -24,6 +24,11 @@ namespace BookAPI.Services
             return await _khachHang.CheckLogIn(model);
         }
 
+        public async Task EditProfile(KhachHangProfileModel profile, string maKh)
+        {
+            await _khachHang.EditProfile(profile, maKh);
+        }
+
         public async Task<KhachHang> GetUserById(string maKH)
         {
             return await _khachHang.GetUserById(maKH);

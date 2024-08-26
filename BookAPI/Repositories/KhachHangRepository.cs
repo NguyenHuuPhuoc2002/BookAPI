@@ -1,4 +1,5 @@
-﻿using BookAPI.Data;
+﻿using AutoMapper;
+using BookAPI.Data;
 using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
@@ -10,11 +11,13 @@ namespace BookAPI.Repositories
     {
         private readonly ILogger<KhachHangRepository> _logger;
         private readonly DataContext _context;
+        private readonly IMapper _mapper;
 
-        public KhachHangRepository(DataContext context, ILogger<KhachHangRepository> logger)
+        public KhachHangRepository(DataContext context, ILogger<KhachHangRepository> logger, IMapper mapper)
         {
             _logger = logger;
             _context = context;
+            _mapper = mapper;
         }
         public async Task<KhachHang> CheckLogIn(LogInModel model)
         {
@@ -87,9 +90,22 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-        public Task EditProfile(KhachHangModel user)
+        public async Task EditProfile(KhachHangProfileModel profile, string maKh)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _logger.LogInformation("Thực hiện cập nhật thông tin cho khách hàng");
+                var khacHang = await _context.KhachHangs.SingleOrDefaultAsync(p => p.MaKH == maKh);
+                var result = _mapper.Map(profile, khacHang);
+                _context.KhachHangs.Update(result);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện cập nhật thông tin cho khách hàng thành công");
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex.Message, "Thực hiện cập nhật thông tin cho khách hàng không thành công");
+                throw;
+            }
         }
     }
 }
