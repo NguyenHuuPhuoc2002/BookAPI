@@ -34,14 +34,14 @@ namespace EcommerceWeb.Services
 
             return paymentUrl;
         }
-        public VnPaymentResponseModel PaymentExecute(IQueryCollection collections)
+        /*public VnPaymentResponseModel PaymentExecute(IQueryCollection collections)
         {
             var pay = new VnPayLibrary();
             var response = pay.GetFullResponseData(collections, _config["Vnpay:HashSecret"]);
 
             return response;
-        }
-/*        public VnPaymentResponseModel PaymentExecute(IQueryCollection collections)
+        }*/
+        public VnPaymentResponseModel PaymentExecute(IQueryCollection collections)
         {
             var vnpay = new VnPayLibrary();
             foreach (var (key, value) in collections)
@@ -77,6 +77,6 @@ namespace EcommerceWeb.Services
                 Token = vnp_SecureHash,
                 VnPayResponseCode = vnp_ResponseCode
             };
-        }*/
+        }
     }
 }

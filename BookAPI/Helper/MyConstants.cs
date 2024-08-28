@@ -7,6 +7,8 @@
         public const string PAYMENT_COD = "COD";
         public const string PAYMENT_VNPAY = "VNPay";
         public const string SHIPPING_WAY = "GRAB";
+        public const string FIRST_NAME = "First Name";
+        public const string LAST_NAME = "Last Name";
         public const double SHIPPING_FEE = 30000;
         public const int STATE_CANCELED_ORDER = 1;
         public const int STATE_NEW_ORDER = 2;

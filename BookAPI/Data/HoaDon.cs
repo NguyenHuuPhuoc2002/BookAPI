@@ -36,8 +36,8 @@ namespace BookAPI.Data
         public string? GhiChu { get; set; }
         public double TongTien { get; set; }
 
-        [ForeignKey("MaKH")]
-        public KhachHang KhachHang { get; set; }
+       /* [ForeignKey("MaKH")]
+        public KhachHang KhachHang { get; set; }*/
 
         [ForeignKey("MaTrangThai")]
         public TrangThai TrangThai { get; set; }

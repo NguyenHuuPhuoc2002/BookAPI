@@ -15,6 +15,7 @@ using AutoMapper;
 using EcommerceWeb.ViewModels;
 using EcommerceWeb.Services;
 using Azure;
+using System.Security.Claims;
 
 namespace BookAPI.Controllers
 {
@@ -28,10 +29,12 @@ namespace BookAPI.Controllers
         private readonly ISachService _sach;
         private readonly IMapper _mapper;
         private readonly IVnPayService _vnPayService;
+     //   private readonly string maKh;
         private static CheckoutModel _model { get; set; }
         public GioHangController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
                                 ILogger<GioHangController> logger, ISachService sach, IMapper mapper)
         {
+           // maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _cart = cart;
             _cartItem = cartItem;
             _logger = logger;
@@ -44,7 +47,7 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> GetCart()
         {
-            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             try
             {
                 var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
@@ -72,6 +75,7 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> AddBook(string id)
         {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(id))
             {
                 _logger.LogWarning("Đầu vào không hợp lệ");
@@ -81,11 +85,11 @@ namespace BookAPI.Controllers
                     Message = "Đầu vào không hợp lệ"
                 });
             }
-            var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+
             try
             {
-                _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKH);
-                var cart = await _cart.GetCartByMaKhAsync(maKH) ?? await CreateCartAsync(maKH);
+                _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKh);
+                var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
                 _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
                 var book = await _sach.GetBookByIdAsync(id);
                 if (book == null)
@@ -110,13 +114,13 @@ namespace BookAPI.Controllers
                     };
 
                     await _cartItem.AddAsync(result);
-                    _logger.LogInformation("Thêm sách với mã {BookId} vào giỏ hàng cho khách hàng với mã {CustomerId} thành công", result.MaSach, maKH);
+                    _logger.LogInformation("Thêm sách với mã {BookId} vào giỏ hàng cho khách hàng với mã {CustomerId} thành công", result.MaSach, maKh);
                     return Ok(result);
                 }
                 else
                 {
                     await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, 1);
-                    _logger.LogInformation("Cập nhật số lượng sách cho khách hàng với mã {CustomerId} thành công", maKH);
+                    _logger.LogInformation("Cập nhật số lượng sách cho khách hàng với mã {CustomerId} thành công", maKh);
                     return NoContent();
                 }
             }
@@ -127,10 +131,12 @@ namespace BookAPI.Controllers
             }
         }
 
+
         [HttpDelete("delete")]
         [Authorize]
         public async Task<IActionResult> Delete(string id)
         {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(id))
             {
                 _logger.LogWarning("Đầu vào không hợp lệ");
@@ -204,6 +210,7 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateAmount(string id, int amount)
         {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             if (string.IsNullOrEmpty(id) || amount <= 0)
             {
                 _logger.LogWarning("Đầu vào không hợp lệ");
@@ -213,15 +220,15 @@ namespace BookAPI.Controllers
                     Message = "Đầu vào không hợp lệ"
                 });
             }
-            var maKH = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+
             try
             {
-                _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKH, id, amount);
-                var cart = await _cart.GetCartByMaKhAsync(maKH);
+                _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKh, id, amount);
+                var cart = await _cart.GetCartByMaKhAsync(maKh);
 
                 if (cart == null)
                 {
-                    _logger.LogWarning("Không tìm thấy giỏ hàng cho khách hàng với mã KH {MaKH}", maKH);
+                    _logger.LogWarning("Không tìm thấy giỏ hàng cho khách hàng với mã KH {MaKH}", maKh);
                     return NotFound(new ApiResponse
                     {
                         Success = false,
@@ -273,7 +280,7 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> ClearAll()
         {
-            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id}", maKh);
             try
             {
@@ -297,10 +304,11 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Checkout(CheckoutModel model, string payment = MyConstants.PAYMENT_COD)
         {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             if (ModelState.IsValid)
             {
                 _model = model;
-                var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+
                 _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", maKh);
                 var cart = await _cart.GetCartByMaKhAsync(maKh);
                 var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
@@ -326,7 +334,7 @@ namespace BookAPI.Controllers
 
                 _logger.LogInformation("Tạo đơn hàng cho khách hàng {maKh}", maKh);
                 #region Tạo Đơn Hàng
-                var khacHang = new KhachHang();
+
                 var hoaDon = new HoaDon
                 {
                     MaKH = maKh,
@@ -392,10 +400,11 @@ namespace BookAPI.Controllers
             return BadRequest();
         }
 
+        [HttpPost("[action]")]
         [Authorize]
         public async Task<IActionResult> PaymentCallBack()
         {
-            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             var cart = await _cart.GetCartByMaKhAsync(maKh);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
             var response = _vnPayService.PaymentExecute(Request.Query);
@@ -408,7 +417,7 @@ namespace BookAPI.Controllers
                 return BadRequest();
             }
             #region Tạo Đơn Hàng
-            var khacHang = new KhachHang();
+
             var hoaDon = new HoaDon
             {
                 MaKH = maKh,
@@ -469,6 +478,21 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
             #endregion
+        }
+        private async Task<GioHang> CreateCartAsync(string maKH)
+        {
+            try
+            {
+                var createCart = new GioHang { MaKH = maKH };
+                await _cart.AddAsync(createCart);
+                _logger.LogInformation("Tạo giỏ hàng cho khách hàng có mã {CustomerId}", maKH);
+                return createCart;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi thêm giỏ hàng");
+                throw;
+            }
         }
     }
 }

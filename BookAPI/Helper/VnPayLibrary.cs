@@ -11,7 +11,7 @@ namespace EcommerceWeb.Helpers
     {
         private readonly SortedList<string, string> _requestData = new SortedList<string, string>(new VnPayCompare());
         private readonly SortedList<string, string> _responseData = new SortedList<string, string>(new VnPayCompare());
-        public VnPaymentResponseModel GetFullResponseData(IQueryCollection collections, string hashSecret)
+       /* public VnPaymentResponseModel GetFullResponseData(IQueryCollection collections, string hashSecret)
         {
             var vnpay = new VnPayLibrary();
             foreach (var (key, value) in collections)
@@ -47,7 +47,7 @@ namespace EcommerceWeb.Helpers
                 Token = vnp_SecureHash,
                 VnPayResponseCode = vnp_ResponseCode
             };
-        }
+        }*/
         public void AddRequestData(string key, string value)
         {
             if (!string.IsNullOrEmpty(value))

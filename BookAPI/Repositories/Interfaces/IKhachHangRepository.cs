@@ -1,4 +1,4 @@
-﻿using BookAPI.Data;
+﻿/*using BookAPI.Data;
 using BookAPI.Models;
 
 namespace BookAPI.Repositories.Interfaces
@@ -12,3 +12,4 @@ namespace BookAPI.Repositories.Interfaces
         Task EditProfile(KhachHangProfileModel profile, string maKh);
     }
 }
+*/

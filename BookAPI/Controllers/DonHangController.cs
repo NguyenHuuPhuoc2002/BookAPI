@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 
 namespace BookAPI.Controllers
 {
@@ -29,7 +30,7 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> GetOrders(int? page, int? pageSize)
         {
-            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _logger.LogInformation("Yêu cầu lấy hóa đơn của khách hàng {maKh}", maKh);
             try
             {
@@ -61,7 +62,7 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> GetOrderDetail(Guid id)
         {
-            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             try
             {
                 var order = await _hoaDon.GetOrderByIdAsync(id, maKh);

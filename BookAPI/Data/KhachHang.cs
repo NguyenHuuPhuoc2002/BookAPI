@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿/*using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookAPI.Data
@@ -21,3 +21,4 @@ namespace BookAPI.Data
         public ICollection<HoaDon> hoaDons { get; set; }
     }
 }
+*/

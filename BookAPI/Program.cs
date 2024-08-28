@@ -1,4 +1,5 @@
-﻿using BookAPI.Database;
+﻿using BookAPI.Data;
+using BookAPI.Database;
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories;
@@ -8,6 +9,7 @@ using BookAPI.Services.Interfaces;
 using EcommerceWeb.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -43,38 +45,59 @@ namespace BookAPI
                                       .AllowAnyHeader());
             });
 
-            #region Authentication
-            //token
-            builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("AppSettings"));
-
-            var secretKey = builder.Configuration["AppSettings:SecretKey"]; //Lấy giá trị của SecretKey từ cấu hình
-
-            //kiểm tra xem secretKey 
-            if (string.IsNullOrEmpty(secretKey))
-            {
-                throw new InvalidOperationException("SecretKey is not configured.");
-            }
-
-            //chuyển đổi một chuỗi secretKey thành một mảng byte
-            var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
-
-            //AddAuthentication
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
+            builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("JWT"));
+            //Identity
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
+            //authentication - Token 
+            builder.Services.AddAuthentication(options => {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options => {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    //tự cấp token
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    //ký vào token
-                    IssuerSigningKey = new SymmetricSecurityKey(secretKeyBytes),
-                    ValidateIssuerSigningKey = true,
-
-                    ClockSkew = TimeSpan.Zero,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidAudience = builder.Configuration["JWT:ValidAudience"],
+                    ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
                 };
             });
-            #endregion
+            /* #region Authentication
+             //token
+             builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("AppSettings"));
+
+             var secretKey = builder.Configuration["AppSettings:SecretKey"]; //Lấy giá trị của SecretKey từ cấu hình
+
+             //kiểm tra xem secretKey 
+             if (string.IsNullOrEmpty(secretKey))
+             {
+                 throw new InvalidOperationException("SecretKey is not configured.");
+             }
+
+             //chuyển đổi một chuỗi secretKey thành một mảng byte
+             var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
+
+             //AddAuthentication
+             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+             .AddJwtBearer(options =>
+             {
+                 options.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     //tự cấp token
+                     ValidateIssuer = false,
+                     ValidateAudience = false,
+                     //ký vào token
+                     IssuerSigningKey = new SymmetricSecurityKey(secretKeyBytes),
+                     ValidateIssuerSigningKey = true,
+
+                     ClockSkew = TimeSpan.Zero,
+                 };
+             });
+             #endregion*/
 
             builder.Host.UseSerilog();
             // Add services to the container.
@@ -122,21 +145,23 @@ namespace BookAPI
             builder.Services.AddScoped<ILoaiRepository, LoaiRepository>();
             builder.Services.AddScoped<IGioHangRepository, GioHangRepository>();
             builder.Services.AddScoped<IGioHangChiTietRepository, GioHangChiTietRepository>();
-            builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
+         //   builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
             builder.Services.AddScoped<IChiTietHoaDonRepository, ChiTietHoaDonRepository>();
+            builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             builder.Services.AddScoped<ILoaiService, LoaiService>();
-            builder.Services.AddScoped<IKhachHangService, KhachHangService>();
+           // builder.Services.AddScoped<IKhachHangService, KhachHangService>();
             builder.Services.AddScoped<IGioHangService, GioHangService>();
             builder.Services.AddScoped<IGioHangChiTietService, GioHangChiTietService>();
             builder.Services.AddScoped<IHoaDonService, HoaDonService>();
             builder.Services.AddScoped<IChiTietHoaDonService, ChiTietHoaDonService>();
             builder.Services.AddSingleton<IVnPayService, VnPayService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
 
             // Đăng ký AutoMapper
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile));

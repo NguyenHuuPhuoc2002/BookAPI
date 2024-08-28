@@ -1,9 +1,10 @@
 ﻿using BookAPI.Data;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookAPI.Database
 {
-    public class DataContext : DbContext
+    public class DataContext : IdentityDbContext<ApplicationUser>
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
@@ -15,7 +16,7 @@ namespace BookAPI.Database
         public DbSet<NhaCungCap> NhaCungCaps { get; set; }
         public DbSet<HoaDon> HoaDons { get; set; }
         public DbSet<ChiTietHoaDon> ChiTietHoaDons { get; set; }
-        public DbSet<KhachHang> KhachHangs { get; set; }
+       /* public DbSet<KhachHang> KhachHangs { get; set; }*/
         public DbSet<TrangThai> TrangThais { get; set; }
         public DbSet<GioHang> GioHangs { get; set; }
         public DbSet<NhaXuatBan> NhaXuatBans { get; set; }
@@ -27,7 +28,7 @@ namespace BookAPI.Database
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<KhachHang>(entity =>
+           /* modelBuilder.Entity<KhachHang>(entity =>
             {
                 entity.ToTable(nameof(KhachHang));
                 entity.HasKey(kh => kh.MaKH);
@@ -39,7 +40,7 @@ namespace BookAPI.Database
                 entity.Property(kh => kh.RandomKey).HasMaxLength(50);
                 entity.Property(kh => kh.Email).HasMaxLength(50);
                 entity.HasIndex(kh => kh.Email).IsUnique();
-            });
+            });*/
             modelBuilder.Entity<GioHang>(entity =>
             {
                 entity.ToTable("GioHang");
@@ -50,10 +51,12 @@ namespace BookAPI.Database
                  .HasForeignKey(ghct => ghct.GioHangId)
                  .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(gh => gh.KhachHang)
+                /*entity.HasOne(gh => gh.KhachHang)
                        .WithOne(kh => kh.GioHang)
                        .HasForeignKey<GioHang>(gh => gh.MaKH)
-                       .OnDelete(DeleteBehavior.Cascade);
+                       .OnDelete(DeleteBehavior.Cascade);*/
+
+
 
             });
 
@@ -65,6 +68,13 @@ namespace BookAPI.Database
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<RefreshToken>()
+                         .HasKey(rt => rt.Id);
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(rt => rt.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Sach>(entity =>
             {
