@@ -126,21 +126,6 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        private async Task<GioHang> CreateCartAsync(string maKH)
-        {
-            try
-            {
-                var createCart = new GioHang { MaKH = maKH };
-                await _cart.AddAsync(createCart);
-                _logger.LogInformation("Tạo giỏ hàng cho khách hàng có mã {CustomerId}", maKH);
-                return createCart;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Xảy ra lỗi khi thêm giỏ hàng");
-                throw;
-            }
-        }
 
         [HttpDelete("delete")]
         [Authorize]
@@ -155,9 +140,6 @@ namespace BookAPI.Controllers
                     Message = "Đầu vào không hợp lệ"
                 });
             }
-
-            var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;
-
             try
             {
                 _logger.LogInformation("Xóa sách với mã {MaSach} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
@@ -411,7 +393,6 @@ namespace BookAPI.Controllers
         }
 
         [Authorize]
-        [HttpGet("[action]")]
         public async Task<IActionResult> PaymentCallBack()
         {
             var maKh = User.FindFirst(MyConstants.CLAIM_CUSTOMER_ID)?.Value;

@@ -6,7 +6,6 @@ namespace BookAPI.Data
     [Table("RefreshToken")]
     public class RefreshToken
     {
-        [Key]
         public Guid Id { get; set; }
         public string MaKH { get; set; }
         [ForeignKey(nameof(MaKH))]
