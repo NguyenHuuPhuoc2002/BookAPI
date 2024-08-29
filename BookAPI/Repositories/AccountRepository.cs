@@ -4,6 +4,9 @@ using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
 
 namespace BookAPI.Repositories
 {
@@ -15,10 +18,11 @@ namespace BookAPI.Repositories
         private readonly IConfiguration _configuration;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AccountRepository> _logger;
+        private readonly IUrlHelper _urlHelper;
 
         public AccountRepository(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
             IConfiguration configuration, RoleManager<IdentityRole> roleManager, ILogger<AccountRepository> logger,
-            IMapper mapper)
+            IMapper mapper, IUrlHelper urlHelper)
         {
             _userManager = userManager;
             _mapper = mapper;
@@ -26,7 +30,80 @@ namespace BookAPI.Repositories
             _configuration = configuration;
             _roleManager = roleManager;
             _logger = logger;
+            _urlHelper = urlHelper;
         }
+
+        public async Task<bool> ChangePasswordAsync(ApplicationUser user, ChangePasswordModel model)
+        {
+            try
+            {
+                _logger.LogInformation("Thực hiện thay đổi mật khẩu");
+                var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+                if (result.Succeeded)
+                {
+                    _logger.LogInformation("Thực hiện thay đổi mật khẩu thành công");
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi thực hiện thay đổi mật khẩu");
+                throw;
+            }
+        }
+
+        public Task<ApplicationUser> FindByEmailAsync(string email)
+        {
+            try
+            {
+                var user = _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    _logger.LogWarning("Không tìm thấy user {email}", email);
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi tìm kiếm user");
+                throw;
+            }
+        }
+
+        public async Task<ApplicationUser> FindByIdAsync(string id)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(id);
+                if(user == null)
+                {
+                    _logger.LogWarning("Không tìm thấy user {email}", id);
+                }
+                return user;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi tìm kiếm user");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetRolesAsync(ApplicationUser model)
+        {
+            try
+            {
+                _logger.LogInformation("Thực hiện truy vấn lấy các role của user {email}", model.Email);
+                var useRole = await _userManager.GetRolesAsync(model);
+                return useRole;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi lấy role của user {email}", model.Email);
+                throw;
+            }
+        }
+
         public async Task<IdentityUser> SignInAsync(SignInModel model)
         {
             _logger.LogInformation("Truy vấn tìm user");
@@ -76,6 +153,25 @@ namespace BookAPI.Repositories
             }
 
             return result;
+        }
+        public async Task<LinkMailModel> ForgetPassword(string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user != null)
+            {
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                Console.WriteLine(token);
+                var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+                var link = _urlHelper.Action("ResetPassword", new { encodedToken });
+                var result = new LinkMailModel
+                {
+                    Email = email,
+                    Link = link
+                };
+                return await Task.FromResult(result);
+
+            }
+            throw new KeyNotFoundException("Email is not exist");
         }
     }
 }

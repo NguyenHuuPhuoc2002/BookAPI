@@ -29,7 +29,7 @@ namespace BookAPI.Controllers
         private readonly ISachService _sach;
         private readonly IMapper _mapper;
         private readonly IVnPayService _vnPayService;
-     //   private readonly string maKh;
+        
         private static CheckoutModel _model { get; set; }
         public GioHangController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
                                 ILogger<GioHangController> logger, ISachService sach, IMapper mapper)
@@ -304,13 +304,13 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Checkout(CheckoutModel model, string payment = MyConstants.PAYMENT_COD)
         {
-            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
+            GlobalVariables.maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             if (ModelState.IsValid)
             {
                 _model = model;
 
-                _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", maKh);
-                var cart = await _cart.GetCartByMaKhAsync(maKh);
+                _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", GlobalVariables.maKh);
+                var cart = await _cart.GetCartByMaKhAsync(GlobalVariables.maKh);
                 var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
 
                 if (payment == MyConstants.PAYMENT_VNPAY)
@@ -332,12 +332,12 @@ namespace BookAPI.Controllers
                     });
                 }
 
-                _logger.LogInformation("Tạo đơn hàng cho khách hàng {maKh}", maKh);
+                _logger.LogInformation("Tạo đơn hàng cho khách hàng {maKh}", GlobalVariables.maKh);
                 #region Tạo Đơn Hàng
 
                 var hoaDon = new HoaDon
                 {
-                    MaKH = maKh,
+                    MaKH = GlobalVariables.maKh,
                     HoTen = model.HoTen,
                     DiaChi = model.DiaChi,
                     DienThoai = model.SoDienThoai,
@@ -382,16 +382,16 @@ namespace BookAPI.Controllers
 
                     _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
                     await _cartItem.ClearAllAsync(cart.GioHangId);
-                    _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", maKh);
+                    _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", GlobalVariables.maKh);
 
-                    _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", maKh);
+                    _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", GlobalVariables.maKh);
                     var order = _mapper.Map<HoaDonModel>(hoaDon);
                     return Ok(order);
                 }
                 catch (Exception ex)
                 {
                     await _cart.RollbackTransactionAsync();
-                    _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", maKh);
+                    _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.maKh);
                     return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
                 }
                 #endregion
@@ -400,12 +400,11 @@ namespace BookAPI.Controllers
             return BadRequest();
         }
 
-        [HttpPost("[action]")]
-        [Authorize]
+        [HttpGet("PaymentCallBack")]
+        [AllowAnonymous]
         public async Task<IActionResult> PaymentCallBack()
         {
-            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            var cart = await _cart.GetCartByMaKhAsync(GlobalVariables.maKh);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
             var response = _vnPayService.PaymentExecute(Request.Query);
             if (response == null)
@@ -420,7 +419,7 @@ namespace BookAPI.Controllers
 
             var hoaDon = new HoaDon
             {
-                MaKH = maKh,
+                MaKH = GlobalVariables.maKh,
                 HoTen = _model.HoTen,
                 DiaChi = _model.DiaChi,
                 DienThoai = _model.SoDienThoai,
@@ -465,16 +464,16 @@ namespace BookAPI.Controllers
 
                 _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
                 await _cartItem.ClearAllAsync(cart.GioHangId);
-                _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", maKh);
+                _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", GlobalVariables.maKh);
 
-                _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", maKh);
+                _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", GlobalVariables.maKh);
                 var order = _mapper.Map<HoaDonModel>(hoaDon);
                 return Ok(order);
             }
             catch (Exception ex)
             {
                 await _cart.RollbackTransactionAsync();
-                _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", maKh);
+                _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.maKh);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
             #endregion

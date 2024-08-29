@@ -1,4 +1,5 @@
-﻿using BookAPI.Models;
+﻿using BookAPI.Data;
+using BookAPI.Models;
 using Microsoft.AspNetCore.Identity;
 
 namespace BookAPI.Services.Interfaces
@@ -7,5 +8,10 @@ namespace BookAPI.Services.Interfaces
     {
         public Task<IdentityResult> SignUpAsync(SignUpModel model);
         public Task<IdentityUser> SignInAsync(SignInModel model);
+        public Task<ApplicationUser> FindByEmailAsync(string email);
+        public Task<bool> ChangePasswordAsync(ApplicationUser user, ChangePasswordModel model);
+        public Task<ApplicationUser> FindByIdAsync(string id);
+        public Task<IEnumerable<string>> GetRolesAsync(ApplicationUser model);
+        Task<LinkMailModel> ForgetPassword(string email);
     }
 }

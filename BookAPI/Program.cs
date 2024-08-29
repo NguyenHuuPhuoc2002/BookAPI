@@ -10,10 +10,15 @@ using EcommerceWeb.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Service;
+using Service.Interface;
 using System.Text;
 
 namespace BookAPI
@@ -22,6 +27,7 @@ namespace BookAPI
     {
         public static void Main(string[] args)
         {
+            #region Logging
             // Cấu hình console để sử dụng UTF-8
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
@@ -33,6 +39,7 @@ namespace BookAPI
                     retainedFileCountLimit: 7, // Giữ lại log của 7 ngày gần nhất
                     encoding: System.Text.Encoding.UTF8) // Ghi log vào file với UTF-8
                 .CreateLogger();
+            #endregion
 
             var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +53,8 @@ namespace BookAPI
             });
 
             builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("JWT"));
+
+            #region Identity
             //Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                 .AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
@@ -66,9 +75,7 @@ namespace BookAPI
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
                 };
             });
-            /* #region Authentication
-             //token
-             builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("AppSettings"));
+            #endregion
 
             builder.Host.UseSerilog();
             // Add services to the container.
@@ -111,6 +118,7 @@ namespace BookAPI
             builder.Services.AddDbContext<DataContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DbBook")));
 
+            #region Repository - Service
             // Repository
             builder.Services.AddScoped<ISachRepository, SachRepository>();
             builder.Services.AddScoped<ILoaiRepository, LoaiRepository>();
@@ -131,9 +139,24 @@ namespace BookAPI
             builder.Services.AddScoped<IChiTietHoaDonService, ChiTietHoaDonService>();
             builder.Services.AddSingleton<IVnPayService, VnPayService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddSingleton<IMailService, MailService>();
+            #endregion
 
             // Đăng ký AutoMapper
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+
+            #region Cấu hình Mail
+            // Thêm các dịch vụ vào DI container
+            builder.Services.AddControllersWithViews();
+            //IUrlHelper
+            builder.Services.AddScoped<IUrlHelper>(x =>
+            {
+                var actionContext = x.GetRequiredService<IActionContextAccessor>().ActionContext;
+                var factory = x.GetRequiredService<IUrlHelperFactory>();
+                return factory.GetUrlHelper(actionContext);
+            });
+            builder.Services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+            #endregion
 
             var app = builder.Build();
 

@@ -1,14 +1,17 @@
 ﻿using BookAPI.Data;
 using BookAPI.Helper;
 using BookAPI.Models;
+using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -25,17 +28,19 @@ namespace BookAPI.Controllers
         private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
         private readonly ILogger<AccountController> _logger;
+        private readonly IMailService _mail;
         private SecurityToken validatedToken;
 
-        public AccountController(IAccountService account, UserManager<ApplicationUser> userManager,
-                                IConfiguration configuration, IRefreshTokenService refreshToken,
-                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountController> logger)
+        public AccountController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
+                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountController> logger,
+                                   IMailService mail)
         {
             _account = account;
             _configuration = configuration;
             _refreshToken = refreshToken;
             _appSettings = optionsMonitor.CurrentValue;
             _logger = logger;
+            _mail = mail;
         }
 
         [HttpPost("SignUp")]
@@ -97,6 +102,35 @@ namespace BookAPI.Controllers
             return Ok(token);
 
         }
+        [HttpPut("ChangePassword")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
+        {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
+            try
+            {
+                _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
+                var user = await _account.FindByEmailAsync(maKh);
+                var result = await _account.ChangePasswordAsync(user, model);
+                if (result)
+                {
+                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
+                    return NoContent();
+                }
+                _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} không thành công", maKh);
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Lỗi"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Yêu cầu đổi mật khẩu từ {email} không thành công", maKh);
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+
+        }
         private string GenerateRefreshToken()
         {
             var random = new byte[32];
@@ -124,9 +158,9 @@ namespace BookAPI.Controllers
                 Email = user.Email,
                 PasswordHash = user.PasswordHash
             };
-            var _user = await _userManager.FindByEmailAsync(user.Email);
+            var _user = await _account.FindByEmailAsync(user.Email);
             //lay usseRole
-            var useRole = await _userManager.GetRolesAsync(_user);
+            var useRole = await _account.GetRolesAsync(_user);
             foreach (var role in useRole)
             {
                 authClaim.Add(new Claim(ClaimTypes.Role, role.ToString()));
@@ -279,7 +313,7 @@ namespace BookAPI.Controllers
                 await _refreshToken.UpdateAsync(storedToken, tokenModel.RefreshToken);
 
                 //create new token
-                var user = await _userManager.FindByIdAsync(storedToken.UserId);
+                var user = await _account.FindByIdAsync(storedToken.UserId);
                 var token = await GenerateToken(user);
                 _logger.LogInformation("Tạo refresh token thành công");
                 return Ok(new ApiResponse
@@ -305,6 +339,17 @@ namespace BookAPI.Controllers
             var dateTimeInterval = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             dateTimeInterval.AddSeconds(utcExpireDate).ToUniversalTime();
             return dateTimeInterval;
+        }
+        [HttpPost("[action]")]
+        public async Task<IActionResult> ForgetPassword(string email)
+        {
+            var mail = await _account.ForgetPassword(email);
+            var request = new MailRequest();
+            request.ToEmail = email;
+            request.Subject = "ForgetPassword";
+            request.Body = mail.Link;
+            var result = await _mail.SendEmail(request);
+            return Ok(result);
         }
     }
 }
