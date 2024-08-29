@@ -70,35 +70,6 @@ namespace BookAPI
              //token
              builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("AppSettings"));
 
-             var secretKey = builder.Configuration["AppSettings:SecretKey"]; //Lấy giá trị của SecretKey từ cấu hình
-
-             //kiểm tra xem secretKey 
-             if (string.IsNullOrEmpty(secretKey))
-             {
-                 throw new InvalidOperationException("SecretKey is not configured.");
-             }
-
-             //chuyển đổi một chuỗi secretKey thành một mảng byte
-             var secretKeyBytes = Encoding.UTF8.GetBytes(secretKey);
-
-             //AddAuthentication
-             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-             .AddJwtBearer(options =>
-             {
-                 options.TokenValidationParameters = new TokenValidationParameters
-                 {
-                     //tự cấp token
-                     ValidateIssuer = false,
-                     ValidateAudience = false,
-                     //ký vào token
-                     IssuerSigningKey = new SymmetricSecurityKey(secretKeyBytes),
-                     ValidateIssuerSigningKey = true,
-
-                     ClockSkew = TimeSpan.Zero,
-                 };
-             });
-             #endregion*/
-
             builder.Host.UseSerilog();
             // Add services to the container.
 
@@ -145,7 +116,6 @@ namespace BookAPI
             builder.Services.AddScoped<ILoaiRepository, LoaiRepository>();
             builder.Services.AddScoped<IGioHangRepository, GioHangRepository>();
             builder.Services.AddScoped<IGioHangChiTietRepository, GioHangChiTietRepository>();
-         //   builder.Services.AddScoped<IKhachHangRepository, KhachHangRepository>();
             builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
             builder.Services.AddScoped<IChiTietHoaDonRepository, ChiTietHoaDonRepository>();
@@ -155,7 +125,6 @@ namespace BookAPI
             builder.Services.AddScoped<ISachService, SachService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
             builder.Services.AddScoped<ILoaiService, LoaiService>();
-           // builder.Services.AddScoped<IKhachHangService, KhachHangService>();
             builder.Services.AddScoped<IGioHangService, GioHangService>();
             builder.Services.AddScoped<IGioHangChiTietService, GioHangChiTietService>();
             builder.Services.AddScoped<IHoaDonService, HoaDonService>();

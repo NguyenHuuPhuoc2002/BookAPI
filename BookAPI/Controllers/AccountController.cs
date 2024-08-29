@@ -22,7 +22,6 @@ namespace BookAPI.Controllers
     {
         private readonly IAccountService _account;
         private readonly IConfiguration _configuration;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
         private readonly ILogger<AccountController> _logger;
@@ -34,7 +33,6 @@ namespace BookAPI.Controllers
         {
             _account = account;
             _configuration = configuration;
-            _userManager = userManager;
             _refreshToken = refreshToken;
             _appSettings = optionsMonitor.CurrentValue;
             _logger = logger;
