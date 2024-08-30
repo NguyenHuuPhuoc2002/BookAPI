@@ -12,9 +12,6 @@ namespace BookAPI.Data
 
         [StringLength(50)]
         public string TenSach {  get; set; }
-
-        public int? SoLuong {  get; set; }
-
         public double? Gia{  get; set; }
 
         public int? SoTap{  get; set; }

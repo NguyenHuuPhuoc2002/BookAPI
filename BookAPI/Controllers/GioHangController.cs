@@ -107,7 +107,6 @@ namespace BookAPI.Controllers
                         TenSach = book.TenSach,
                         DonGia = book.Gia ?? 0,
                         SoLuong = 1,
-                        ThanhTien = book.SoLuong * book.Gia ?? 0,
                         GiamGia = 0,
                         GioHangId = cart.GioHangId,
                         MaSach = book.MaSach
