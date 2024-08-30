@@ -7,5 +7,8 @@ namespace BookAPI.Repositories.Interfaces
     {
         Task<IEnumerable<LoaiModel>> GetAllLoaiAsync();
         Task<LoaiModel> GetLoaiByIdAsync(string id);
+        Task<bool> AddAsync(LoaiModel model);
+        Task<bool> RemoveAsync(string id);
+        Task<bool> UpdateAsync(LoaiModel model);
     }
 }

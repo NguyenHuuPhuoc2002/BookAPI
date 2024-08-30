@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BookAPI.Data;
 using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
@@ -18,6 +19,7 @@ namespace BookAPI.Repositories
             _logger = logger;
             _mapper = mapper;
         }
+
         public async Task<IEnumerable<LoaiModel>> GetAllLoaiAsync()
         {
             try
@@ -58,6 +60,70 @@ namespace BookAPI.Repositories
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Xảy ra lỗi khi truy vấn lấy loại theo mã {id}", id);
+                throw;
+            }
+        }
+        public async Task<bool> AddAsync(LoaiModel model)
+        {
+            try
+            {
+                var result = _mapper.Map<Loai>(model);
+                _logger.LogInformation("Thực hiện thêm loại vào csdl");
+                await _context.AddAsync(result);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện thêm loại vào csdl thành công");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Thực hiện thêm loại vào csdl không thành công");
+                throw;
+            }
+        }
+
+        public async Task<bool> RemoveAsync(string id)
+        {
+            try
+            {
+                var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == id);
+                if(loai == null)
+                {
+                    _logger.LogWarning("Không tìm thấy loại {id}", id);
+                    return false;
+                }
+                _logger.LogInformation("Thực hiện xóa loại {id}", id);
+                _context.Loais.Remove(loai);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện xóa loại {id}t thành công", id);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Thực hiện xóa loại không thành công");
+                throw;
+            }
+        }
+
+        public async Task<bool> UpdateAsync(LoaiModel model)
+        {
+            try
+            {
+                var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == model.MaLoai);
+                if(loai == null)
+                {
+                    _logger.LogWarning("Không tìm thấy loai {maloai}", model.MaLoai);
+                    return false;
+                }
+                var result = _mapper.Map(model, loai);
+                _logger.LogInformation("Thực hiện cập nhật loai {loai}", model.MaLoai);
+                _context.Update(result);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện cập nhật loai {loai} thành công", model.MaLoai);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Thực hiện cập nhập loai không thành công");
                 throw;
             }
         }

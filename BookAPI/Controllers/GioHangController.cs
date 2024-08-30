@@ -107,6 +107,7 @@ namespace BookAPI.Controllers
                         TenSach = book.TenSach,
                         DonGia = book.Gia ?? 0,
                         SoLuong = 1,
+                        ThanhTien = book.Gia ?? 0,
                         GiamGia = 0,
                         GioHangId = cart.GioHangId,
                         MaSach = book.MaSach
@@ -176,12 +177,7 @@ namespace BookAPI.Controllers
                 {
                     await _cartItem.DeleteAsync(cartItem);
                     _logger.LogInformation("Xóa thành công sách với mã {BookId} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
-                    return Ok(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Xóa thành công!",
-                        Data = cartItem
-                    });
+                    return NoContent();
                 }
                 else
                 {

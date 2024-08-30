@@ -49,29 +49,31 @@ namespace BookAPI.Controllers
             try
             {
                 _logger.LogInformation("Yêu cầu đăng kí từ user có email {email}", model.Email);
-                
-                if (model.Image != null)
+                if (ModelState.IsValid)
                 {
-                    var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "KhachHang", model.Image.FileName);
-                    using (var stream = System.IO.File.Create(path))
+                    if (model.Image != null)
                     {
-                        await model.Image.CopyToAsync(stream);
+                        var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "KhachHang", model.Image.FileName);
+                        using (var stream = System.IO.File.Create(path))
+                        {
+                            await model.Image.CopyToAsync(stream);
+                        }
+                        model.Hinh = "/images/KhachHang/" + model.Image.FileName;
                     }
-                    model.Hinh = "/images/KhachHang/" + model.Image.FileName;
-                }
-                else
-                {
-                    model.Hinh = "";
-                }
-                var result = await _account.SignUpAsync(model);
-                if (result.Succeeded)
-                {
-                    _logger.LogInformation("Yêu cầu đăng kí từ user có email {email} thành công", model.Email);
-                    return Ok(new ApiResponse
+                    else
                     {
-                        Success = true,
-                        Message = "Đăng kí thành công",
-                    });
+                        model.Hinh = "";
+                    }
+                    var result = await _account.SignUpAsync(model);
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation("Yêu cầu đăng kí từ user có email {email} thành công", model.Email);
+                        return Ok(new ApiResponse
+                        {
+                            Success = true,
+                            Message = "Đăng kí thành công",
+                        });
+                    }
                 }
                 return BadRequest(new ApiResponse
                 {
@@ -79,7 +81,7 @@ namespace BookAPI.Controllers
                     Message = "Lỗi"
                 });
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _logger.LogError("Yêu cầu đăng kí tài khoản không thành công");
                 return StatusCode(500, ex.Message);
@@ -89,17 +91,25 @@ namespace BookAPI.Controllers
         [HttpPost("SignIn")]
         public async Task<IActionResult> SignIn(SignInModel model)
         {
-            _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email} thành công", model.Email);
-            var user = await _account.SignInAsync(model);
-            if (user == null)
+            if (ModelState.IsValid)
             {
-                _logger.LogWarning("Không tồn tại user có email {email}", model.Email);
-                return Unauthorized();
+                _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email} thành công", model.Email);
+                var user = await _account.SignInAsync(model);
+                if (user == null)
+                {
+                    _logger.LogWarning("Không tồn tại user có email {email}", model.Email);
+                    return Unauthorized();
+                }
+                _logger.LogInformation("Đăng nhập thành công");
+                _logger.LogInformation("Tạo token");
+                var token = await GenerateToken(user);
+                return Ok(token);
             }
-            _logger.LogInformation("Đăng nhập thành công");
-            _logger.LogInformation("Tạo token");
-            var token = await GenerateToken(user);
-            return Ok(token);
+            return BadRequest(new ApiResponse
+            {
+                Success = false,
+                Message = "Dữ liệu không hợp lệ."
+            });
 
         }
         [HttpPut("ChangePassword")]
@@ -109,15 +119,18 @@ namespace BookAPI.Controllers
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             try
             {
-                _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
-                var user = await _account.FindByEmailAsync(maKh);
-                var result = await _account.ChangePasswordAsync(user, model);
-                if (result)
+                if (ModelState.IsValid)
                 {
-                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
-                    return NoContent();
+                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
+                    var user = await _account.FindByEmailAsync(maKh);
+                    var result = await _account.ChangePasswordAsync(user, model);
+                    if (result)
+                    {
+                        _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
+                        return NoContent();
+                    }
+                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} không thành công", maKh);
                 }
-                _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} không thành công", maKh);
                 return BadRequest(new ApiResponse
                 {
                     Success = false,

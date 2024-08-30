@@ -162,7 +162,7 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Truy vấn lấy sách trong giỏ bằng với GioHangChiTietId {id}", id);
-                var item = await _context.GioHangChiTiets.SingleOrDefaultAsync(p =>  p.GioHangChiTietId == id);
+                var item = await _context.GioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangChiTietId == id);
                 
                 if (item == null)
                 {
@@ -173,10 +173,12 @@ namespace BookAPI.Repositories
                     if(amount != 1)
                     {
                         item.SoLuong = amount;
+                        item.ThanhTien = item.SoLuong * item.DonGia;
                     }
                     else
                     {
                         item.SoLuong += 1;
+                        item.ThanhTien = item.SoLuong * item.DonGia;
                     }
 
                     _context.Update(item);
