@@ -5,6 +5,7 @@ using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BookAPI.Repositories
@@ -20,6 +21,58 @@ namespace BookAPI.Repositories
             _context = context;
             _mapper = mapper;
             _logger = logger;
+        }
+
+        public async Task<bool> AddAsync(Sach model)
+        {
+            try
+            {
+                await _context.AddAsync(model);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện thêm sách {id} thành công", model.TenSach);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện thêm sách");
+                throw ex;
+            }
+        }
+        public async Task<bool> DeleteAsync(string id)
+        {
+            try
+            {
+                var book = await _context.Sachs.SingleOrDefaultAsync(p => p.MaSach ==  id);
+                if (book == null) 
+                {
+                    _logger.LogWarning("Không tìm thấy sách {id}", id);
+                    return false;
+                }
+                _context.Sachs.Remove(book);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện xóa sách {id} thành công", book.TenSach);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện xóa sách");
+                throw ex;
+            }
+        }
+        public async Task<bool> UpdateAsync(Sach model)
+        {
+            try
+            {
+                _context.Sachs.Update(model);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Thực hiện cập nhật sách thành công");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện cập nhật sách");
+                throw ex;
+            }
         }
         public async Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize)
         {
@@ -52,6 +105,7 @@ namespace BookAPI.Repositories
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
                                   MaNCC = s.MaNCC,
+                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
 
                               }).OrderByDescending(p => p.NgayNhap);
@@ -86,6 +140,7 @@ namespace BookAPI.Repositories
                                         SoLuongTon = s.SoLuongTon,
                                         MoTa = s.MoTa,
                                         MaNCC = s.MaNCC,
+                                        MaNXB = s.MaNXB,
                                         TenNhaXuatBan = nxb.TenNhaXuatBan,
 
                                     }).SingleOrDefaultAsync();
@@ -138,6 +193,7 @@ namespace BookAPI.Repositories
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
                                   MaNCC = s.MaNCC,
+                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
 
                               });
@@ -182,6 +238,7 @@ namespace BookAPI.Repositories
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
                                   MaNCC = s.MaNCC,
+                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
 
                               }).OrderByDescending(p => p.NgayNhap);

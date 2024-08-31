@@ -16,7 +16,7 @@ namespace BookAPI.Data
 
         public int? SoTap{  get; set; }
  
-        [StringLength (50)]
+        [StringLength (100)]
         public string? Anh{  get; set; }
 
         public DateTime? NgayNhap{  get; set; }
