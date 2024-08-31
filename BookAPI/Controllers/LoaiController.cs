@@ -96,31 +96,6 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Remove(string id)
-        {
-            try
-            {
-                _logger.LogInformation("Yêu cầu xóa loại {id}", id);
-                var result = await _loai.RemoveAsync(id);
-                if (result)
-                {
-                    _logger.LogInformation("Yêu cầu xóa loại {id} thành công", id);
-                    return NoContent();
-                }
-                _logger.LogInformation("Yêu cầu xóa loại {id} không thành công", id);
-                return BadRequest(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Xóa không thành công"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Yêu cầu xóa loại không thành công {id}", id);
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         [HttpPut("update")] 
         public async Task<IActionResult> Update(LoaiModel model)
         {

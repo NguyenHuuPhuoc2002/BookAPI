@@ -15,12 +15,9 @@ namespace BookAPI.Models
         [Required]
         [Range(1, double.MaxValue, ErrorMessage = "Số tập phải lớn hơn 0.")]
         public int? SoTap { get; set; }
-        public string? Anh { get; set; }
         public DateTime? NgayNhap { get; set; }
         [Required]
         public string TacGia { get; set; }
-        [Required]
-        public string MaLoai { get; set; }
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Số lượng phải lớn hơn 0.")]
         public int? SoLuongTon { get; set; }

@@ -112,38 +112,6 @@ namespace BookAPI.Controllers
             });
 
         }
-        [HttpPut("ChangePassword")]
-        [Authorize]
-        public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
-        {
-            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            try
-            {
-                if (ModelState.IsValid)
-                {
-                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
-                    var user = await _account.FindByEmailAsync(maKh);
-                    var result = await _account.ChangePasswordAsync(user, model);
-                    if (result)
-                    {
-                        _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
-                        return NoContent();
-                    }
-                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} không thành công", maKh);
-                }
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Lỗi"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Yêu cầu đổi mật khẩu từ {email} không thành công", maKh);
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-
-        }
         private string GenerateRefreshToken()
         {
             var random = new byte[32];
