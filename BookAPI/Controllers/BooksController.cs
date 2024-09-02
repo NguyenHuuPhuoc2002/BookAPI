@@ -27,7 +27,7 @@ namespace BookAPI.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        [HttpGet()]
+        [HttpGet]
         public async Task<IActionResult> GettAll(string? maLoai, int? page, int? pageSize)
         {
             try
