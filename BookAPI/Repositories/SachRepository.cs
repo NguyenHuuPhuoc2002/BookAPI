@@ -42,8 +42,8 @@ namespace BookAPI.Repositories
         {
             try
             {
-                var book = await _context.Sachs.SingleOrDefaultAsync(p => p.MaSach ==  id);
-                if (book == null) 
+                var book = await _context.Sachs.SingleOrDefaultAsync(p => p.MaSach == id);
+                if (book == null)
                 {
                     _logger.LogWarning("Không tìm thấy sách {id}", id);
                     return false;
@@ -76,18 +76,20 @@ namespace BookAPI.Repositories
         }
         public async Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize)
         {
-            _logger.LogInformation("Xây dựng truy vấn sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
-            var listBook = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).AsQueryable();
-            if (!string.IsNullOrEmpty(maLoai))
+            try
             {
-                _logger.LogInformation("Truy vấn sách theo MaLoai: {maLoai}", maLoai);
-                listBook = _context.Sachs.Where(p => p.MaLoai == maLoai);
-            }
+                _logger.LogInformation("Xây dựng truy vấn sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
+                var listBook = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).Include(ncc => ncc.NhaCungCap).AsQueryable();
+                if (!string.IsNullOrEmpty(maLoai))
+                {
+                    _logger.LogInformation("Truy vấn sách theo MaLoai: {maLoai}", maLoai);
+                    listBook = _context.Sachs.Where(p => p.MaLoai == maLoai);
+                }
 
                 _logger.LogInformation("Số lượng sách trước phân trang: {listBook}", await listBook.CountAsync());
-                var data = PaginatedList<Sach>.Create(listBook, page, pageSize);
+                var data = PaginatedList<Sach>.Create(listBook, page, pageSize).ToList();
 
-                _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count);
+                _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
                 var result = (from s in data
                               select new SachModel
                               {
@@ -101,7 +103,12 @@ namespace BookAPI.Repositories
                                   TacGia = s.TacGia,
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
-                                  TenNhaXuatBan = nxb.TenNhaXuatBan,
+                                  MaNCC = s.MaNCC,
+                                  MaNXB = s.MaNXB,
+                                  TenLoai = s.Loai.TenLoai,
+                                  TenNhaXuatBan = s.NhaXuatBan.TenNhaXuatBan,
+                                  TenNhaCungCap = s.NhaCungCap.TenCongTy
+                              }).OrderByDescending(p => p.NgayNhap);
 
                 _logger.LogInformation("Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
                 return result;
@@ -133,6 +140,9 @@ namespace BookAPI.Repositories
                                         MoTa = s.MoTa,
                                         MaNCC = s.MaNCC,
                                         MaNXB = s.MaNXB,
+                                        TenLoai = s.Loai.TenLoai,
+                                        TenNhaXuatBan = s.NhaXuatBan.TenNhaXuatBan,
+                                        TenNhaCungCap = s.NhaCungCap.TenCongTy
 
                                     }).SingleOrDefaultAsync();
                 if (result == null)
@@ -155,21 +165,71 @@ namespace BookAPI.Repositories
         {
             _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}",
                                     key, page, pageSize);
-            var books = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                _logger.LogInformation("Truy vấn sách theo từ khóa: {key}", key);
-                books = _context.Sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())
-                    || p.TacGia.ToLower().Contains(key.ToLower().Trim()));
-            }
+            var books = _context.Sachs.AsQueryable();
             try
             {
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    _logger.LogInformation("Truy vấn sách theo từ khóa: {key}", key);
+                    books = _context.Sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())
+                        || p.TacGia.ToLower().Contains(key.ToLower().Trim()));
+
+                    var data = PaginatedList<Sach>.Create(books, page, pageSize);
+
+                    _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
+                    var result = (from s in data
+                                  join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
+                                  join ncc in _context.NhaCungCaps on s.MaNCC equals ncc.MaNCC
+                                  join l in _context.Loais on s.MaLoai equals l.MaLoai
+                                  select new SachModel
+                                  {
+                                      MaSach = s.MaSach,
+                                      MaLoai = s.MaLoai,
+                                      TenSach = s.TenSach,
+                                      Gia = s.Gia,
+                                      SoTap = s.SoTap,
+                                      Anh = s.Anh,
+                                      NgayNhap = s.NgayNhap,
+                                      TacGia = s.TacGia,
+                                      SoLuongTon = s.SoLuongTon,
+                                      MoTa = s.MoTa,
+                                      MaNCC = s.MaNCC,
+                                      MaNXB = s.MaNXB,
+                                      TenNhaXuatBan = nxb.TenNhaXuatBan,
+                                      TenNhaCungCap = ncc.TenCongTy,
+                                      TenLoai = l.TenLoai,
+                                  });
+                    return result;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Đã xảy ra lỗi khi truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}", key, page, pageSize);
+                throw;
+            }
+        }
+        public async Task<IEnumerable<SachModel>> SearchBookByNXBAsync(string key, int page, int pageSize)
+        {
+            try
+            {
+                _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với theo NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}",
+                                    key, page, pageSize);
+                var books = _context.Sachs.AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    _logger.LogInformation("Truy vấn sách theo NXB: {key}", key);
+                    books = _context.Sachs.Where(p => p.NhaXuatBan.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
+                }
+
                 var data = PaginatedList<Sach>.Create(books, page, pageSize);
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
                 var result = (from s in data
+                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
+                              join ncc in _context.NhaCungCaps on s.MaNCC equals ncc.MaNCC
+                              join l in _context.Loais on s.MaLoai equals l.MaLoai
                               select new SachModel
                               {
                                   MaSach = s.MaSach,
@@ -183,48 +243,11 @@ namespace BookAPI.Repositories
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
                                   MaNCC = s.MaNCC,
+                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
+                                  TenNhaCungCap = ncc.TenCongTy,
+                                  TenLoai = l.TenLoai,
                               });
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Đã xảy ra lỗi khi truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}", key, page, pageSize);
-                throw;
-            }
-        }
-        public async Task<IEnumerable<SachModel>> SearchBookByNXBAsync(string key, int page, int pageSize)
-        {
-            _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với theo NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}",
-                                    key, page, pageSize);
-            var books = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                _logger.LogInformation("Truy vấn sách theo NXB: {key}", key);
-                books = _context.Sachs.Where(p => p.NhaXuatBan.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
-            }
-            try
-            {
-                var data = PaginatedList<Sach>.Create(books, page, pageSize);
-
-                _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
-                var result = (from s in data
-                              select new SachModel
-                              {
-                                  MaSach = s.MaSach,
-                                  MaLoai = s.MaLoai,
-                                  TenSach = s.TenSach,
-                                  Gia = s.Gia,
-                                  SoTap = s.SoTap,
-                                  Anh = s.Anh,
-                                  NgayNhap = s.NgayNhap,
-                                  TacGia = s.TacGia,
-                                  SoLuongTon = s.SoLuongTon,
-                                  MoTa = s.MoTa,
-                                  TenNhaXuatBan = nxb.TenNhaXuatBan,
-
-                              }).OrderByDescending(p => p.NgayNhap);
                 return result;
             }
             catch (Exception ex)

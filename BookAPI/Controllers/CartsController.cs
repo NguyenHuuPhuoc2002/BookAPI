@@ -21,18 +21,18 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class GioHangController : ControllerBase
+    public class CartsController : ControllerBase
     {
         private readonly IGioHangService _cart;
         private readonly IGioHangChiTietService _cartItem;
-        private readonly ILogger<GioHangController> _logger;
+        private readonly ILogger<CartsController> _logger;
         private readonly ISachService _sach;
         private readonly IMapper _mapper;
         private readonly IVnPayService _vnPayService;
         
         private static CheckoutModel _model { get; set; }
-        public GioHangController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
-                                ILogger<GioHangController> logger, ISachService sach, IMapper mapper)
+        public CartsController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
+                                ILogger<CartsController> logger, ISachService sach, IMapper mapper)
         {
            // maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _cart = cart;
@@ -42,7 +42,7 @@ namespace BookAPI.Controllers
             _mapper = mapper;
             _vnPayService = vnPayService;
         }
-        [HttpGet("PaymentCallBack")]
+        [HttpGet("payment-callback")]
         [AllowAnonymous]
         public async Task<IActionResult> PaymentCallBack()
         {
@@ -120,7 +120,7 @@ namespace BookAPI.Controllers
             }
             #endregion
         }
-        [HttpGet("carts")]
+        [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetCart()
         {
@@ -148,7 +148,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpPost("add")]
+        [HttpPost]
         [Authorize]
         public async Task<IActionResult> AddBook(string id)
         {
@@ -207,6 +207,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
+
         [HttpPost("checkout")]
         [Authorize]
         public async Task<IActionResult> Checkout(CheckoutModel model, string payment = MyConstants.PAYMENT_COD)
@@ -376,7 +377,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete("delete{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(string id)
         {
@@ -444,7 +445,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpDelete("clear-all")]
+        [HttpDelete("clear")]
         [Authorize]
         public async Task<IActionResult> ClearAll()
         {

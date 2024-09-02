@@ -10,18 +10,18 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class LoaiController : ControllerBase
+    public class CategoriesController : ControllerBase
     {
         private readonly ILoaiService _loai;
-        private readonly ILogger<LoaiController> _logger;
+        private readonly ILogger<CategoriesController> _logger;
 
-        public LoaiController(ILoaiService loai, ILogger<LoaiController> logger) 
+        public CategoriesController(ILoaiService loai, ILogger<CategoriesController> logger) 
         {
             _loai = loai;
             _logger = logger;
         }
 
-        [HttpGet("loais")]
+        [HttpGet("categories")]
         public async Task<IActionResult> GetAllLoai() 
         {
             try
@@ -37,7 +37,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
-        [HttpGet("{id}")]
+        [HttpGet("categories/{id}")]
         public async Task<IActionResult> GetLoaiById(string id)
         {
             try
@@ -54,7 +54,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
-        [HttpPost("add")]
+        [HttpPost("categories")]
         public async Task<IActionResult> Add(LoaiModel model)
         {
             try
@@ -96,7 +96,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpPut("update")] 
+        [HttpPut("update/{id}")] 
         public async Task<IActionResult> Update(LoaiModel model)
         {
             try

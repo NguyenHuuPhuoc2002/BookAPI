@@ -12,14 +12,14 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SachController : ControllerBase
+    public class BooksController : ControllerBase
     {
         private readonly ISachService _sach;
-        private readonly ILogger<SachController> _logger;
+        private readonly ILogger<BooksController> _logger;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public SachController(ISachService sach, ILogger<SachController> logger, IMapper mapper, IWebHostEnvironment webHostEnvironment)
+        public BooksController(ISachService sach, ILogger<BooksController> logger, IMapper mapper, IWebHostEnvironment webHostEnvironment)
         {
             _sach = sach;
             _logger = logger;
@@ -27,7 +27,7 @@ namespace BookAPI.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        [HttpGet("books")]
+        [HttpGet()]
         public async Task<IActionResult> GettAll(string? maLoai, int? page, int? pageSize)
         {
             try
@@ -80,7 +80,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("search")]
+        [HttpGet("search-by-name")]
         public async Task<IActionResult> SearchBook(string keyWord, int? page, int? pageSize)
         {
             try
@@ -109,7 +109,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpGet("search-nhaxuatban")]
+        [HttpGet("search-by-publisher")]
         public async Task<IActionResult> SearchBookNXB(string keyWord, int? page, int? pageSize)
         {
             try
@@ -138,7 +138,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpPost("add")]
+        [HttpPost]
         public async Task<IActionResult> AddBook([FromForm] SachAdminModel model)
         {
             try
@@ -188,7 +188,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpPut("update/{id}")]
+        [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBook([FromForm] SachAdminModel model)
         {
             try
@@ -250,6 +250,7 @@ namespace BookAPI.Controllers
                     book.SoLuongTon = model.SoLuongTon;
                     book.MoTa = model.MoTa;
                     book.MaNCC = model.MaNCC;
+                    book.MaNXB = model.MaNXB;
 
                     var result = _mapper.Map<Sach>(book);
                     await _sach.UpdateAsync(result);
@@ -274,7 +275,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Deletee(string id)
         {
             try

@@ -12,13 +12,13 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DonHangController : ControllerBase
+    public class OrdersController : ControllerBase
     {
         private readonly IHoaDonService _hoaDon;
-        private readonly ILogger<DonHangController> _logger;
+        private readonly ILogger<OrdersController> _logger;
         private readonly IChiTietHoaDonService _hoaDonCT;
 
-        public DonHangController(IHoaDonService hoaDon, ILogger<DonHangController> logger,
+        public OrdersController(IHoaDonService hoaDon, ILogger<OrdersController> logger,
                                 IChiTietHoaDonService hoaDonCT) 
         {
             _hoaDon = hoaDon;
@@ -58,7 +58,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpGet("order-detail")]
+        [HttpGet("order-detail/{id}")]
         [Authorize]
         public async Task<IActionResult> GetOrderDetail(Guid id)
         {
@@ -93,7 +93,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpPut("cancel-order")]
+        [HttpPut("cancel-order/{id}")]
         [Authorize]
         public async Task<IActionResult> CancelOrder(Guid id)
         {

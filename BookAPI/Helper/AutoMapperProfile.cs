@@ -14,8 +14,7 @@ namespace BookAPI.Helper
             CreateMap<HoaDon, HoaDonModel>().ReverseMap();
             CreateMap<SignUpModel, ApplicationUser>().ReverseMap();
             CreateMap<SachAdminModel, Sach>().ReverseMap();
-           /* CreateMap<KhachHangModel, KhachHang>().ReverseMap();
-            CreateMap<KhachHangProfileModel, KhachHang>().ReverseMap();*/
+            CreateMap<SachModel, Sach>().ReverseMap();
         }
 
     }

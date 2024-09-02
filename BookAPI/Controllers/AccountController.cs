@@ -43,7 +43,7 @@ namespace BookAPI.Controllers
             _mail = mail;
         }
 
-        [HttpPost("SignUp")]
+        [HttpPost("register")]
         public async Task<IActionResult> SignUp([FromForm] SignUpModel model)
         {
             try
@@ -88,7 +88,7 @@ namespace BookAPI.Controllers
             }
         }
 
-        [HttpPost("SignIn")]
+        [HttpPost("login")]
         public async Task<IActionResult> SignIn(SignInModel model)
         {
             if (ModelState.IsValid)
@@ -181,7 +181,7 @@ namespace BookAPI.Controllers
                 RefreshToken = refreshToken,
             };
         }
-        [HttpPost("renewToken")]
+        [HttpPost("renew-access-token")]
         public async Task<IActionResult> RenewToken(TokenModel tokenModel)
         {
             _logger.LogInformation("Tạo RefreshToken");
@@ -321,7 +321,7 @@ namespace BookAPI.Controllers
             dateTimeInterval.AddSeconds(utcExpireDate).ToUniversalTime();
             return dateTimeInterval;
         }
-        [HttpPost("[action]")]
+        [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(string email)
         {
             var mail = await _account.ForgetPassword(email);
@@ -332,7 +332,7 @@ namespace BookAPI.Controllers
             var result = await _mail.SendEmail(request);
             return Ok(result);
         }
-        [HttpPut("ChangePassword")]
+        [HttpPut("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
         {
