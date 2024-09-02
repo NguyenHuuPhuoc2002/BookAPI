@@ -16,8 +16,6 @@ namespace BookAPI.Models
         public string MaLoai { get; set; }
         public int? SoLuongTon { get; set; }
         public string? MoTa { get; set; }
-        public int? MaNXB { get; set; }
-        public string? MaNCC { get; set; }
         public string TenNhaXuatBan{ get; set; }
     }
     public class SachAdminModel

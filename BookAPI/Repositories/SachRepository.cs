@@ -84,14 +84,11 @@ namespace BookAPI.Repositories
                 listBook = _context.Sachs.Where(p => p.MaLoai == maLoai);
             }
 
-            try
-            {
                 _logger.LogInformation("Số lượng sách trước phân trang: {listBook}", await listBook.CountAsync());
                 var data = PaginatedList<Sach>.Create(listBook, page, pageSize);
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count);
                 var result = (from s in data
-                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
                               {
                                   MaSach = s.MaSach,
@@ -104,11 +101,7 @@ namespace BookAPI.Repositories
                                   TacGia = s.TacGia,
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
-                                  MaNCC = s.MaNCC,
-                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
-
-                              }).OrderByDescending(p => p.NgayNhap);
 
                 _logger.LogInformation("Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
                 return result;
@@ -125,7 +118,6 @@ namespace BookAPI.Repositories
             {
                 _logger.LogInformation("Truy vấn lấy sách với ID {id} ", id);
                 var result = await (from s in _context.Sachs
-                                    join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                                     where s.MaSach == id.Trim()
                                     select new SachModel
                                     {
@@ -141,7 +133,6 @@ namespace BookAPI.Repositories
                                         MoTa = s.MoTa,
                                         MaNCC = s.MaNCC,
                                         MaNXB = s.MaNXB,
-                                        TenNhaXuatBan = nxb.TenNhaXuatBan,
 
                                     }).SingleOrDefaultAsync();
                 if (result == null)
@@ -179,7 +170,6 @@ namespace BookAPI.Repositories
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
                 var result = (from s in data
-                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
                               {
                                   MaSach = s.MaSach,
@@ -193,12 +183,8 @@ namespace BookAPI.Repositories
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
                                   MaNCC = s.MaNCC,
-                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
-
                               });
-
-
                 return result;
             }
             catch (Exception ex)
@@ -224,7 +210,6 @@ namespace BookAPI.Repositories
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
                 var result = (from s in data
-                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
                               select new SachModel
                               {
                                   MaSach = s.MaSach,
@@ -237,13 +222,9 @@ namespace BookAPI.Repositories
                                   TacGia = s.TacGia,
                                   SoLuongTon = s.SoLuongTon,
                                   MoTa = s.MoTa,
-                                  MaNCC = s.MaNCC,
-                                  MaNXB = s.MaNXB,
                                   TenNhaXuatBan = nxb.TenNhaXuatBan,
 
                               }).OrderByDescending(p => p.NgayNhap);
-
-
                 return result;
             }
             catch (Exception ex)

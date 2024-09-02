@@ -250,7 +250,6 @@ namespace BookAPI.Controllers
                     book.SoLuongTon = model.SoLuongTon;
                     book.MoTa = model.MoTa;
                     book.MaNCC = model.MaNCC;
-                    book.MaNXB = model.MaNXB;
 
                     var result = _mapper.Map<Sach>(book);
                     await _sach.UpdateAsync(result);
