@@ -96,7 +96,7 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpPut("update/{id}")] 
+        [HttpPut("update")] 
         public async Task<IActionResult> Update(LoaiModel model)
         {
             try

@@ -128,6 +128,7 @@ namespace BookAPI
             builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
             builder.Services.AddScoped<IChiTietHoaDonRepository, ChiTietHoaDonRepository>();
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+            builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();
@@ -140,6 +141,7 @@ namespace BookAPI
             builder.Services.AddSingleton<IVnPayService, VnPayService>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddSingleton<IMailService, MailService>();
+            builder.Services.AddScoped<IPublisherService, PublisherService>();
             #endregion
 
             // Đăng ký AutoMapper

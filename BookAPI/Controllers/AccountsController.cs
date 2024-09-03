@@ -21,18 +21,18 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AccountController : ControllerBase
+    public class AccountsController : ControllerBase
     {
         private readonly IAccountService _account;
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
-        private readonly ILogger<AccountController> _logger;
+        private readonly ILogger<AccountsController> _logger;
         private readonly IMailService _mail;
         private SecurityToken validatedToken;
 
-        public AccountController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
-                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountController> logger,
+        public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
+                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger,
                                    IMailService mail)
         {
             _account = account;

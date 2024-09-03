@@ -15,6 +15,7 @@ namespace BookAPI.Helper
             CreateMap<SignUpModel, ApplicationUser>().ReverseMap();
             CreateMap<SachAdminModel, Sach>().ReverseMap();
             CreateMap<SachModel, Sach>().ReverseMap();
+            CreateMap<NhaXuatBan, PublisherModel>().ReverseMap();
         }
 
     }
