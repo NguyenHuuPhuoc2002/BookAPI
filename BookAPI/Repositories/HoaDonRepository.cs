@@ -21,6 +21,40 @@ namespace BookAPI.Repositories
             _logger = logger;
         }
 
+        public async Task<IEnumerable<HoaDonModel>> GetOderConfirm(string email, int page, int pageSize)
+        {
+            try
+            {
+                _logger.LogInformation("Thực hiện lấy đơn hàng chờ xác nhận");
+                var query =  _context.HoaDons.Include(p => p.TrangThai).Where(p => p.MaTrangThai == MyConstants.STATE_NEW_ORDER
+                                                                              && p.MaKH == email).AsQueryable();
+                var result = PaginatedList<HoaDon>.Create(query, page, pageSize).ToList();
+                var ordersConfirm = result.Select(p => new HoaDonModel
+                {
+                    MaHD = p.MaHD,
+                    MaTrangThai = p.MaTrangThai,
+                    CachThanhToan = p.CachThanhToan,
+                    CachVanChuyen = p.CachVanChuyen,
+                    DiaChi = p.DiaChi,
+                    DienThoai = p.DienThoai,
+                    GhiChu = p.GhiChu,
+                    HoTen = p.HoTen,
+                    MaKH = p.MaKH,
+                    MaNV = p.MaNV,
+                    NgayDat = p.NgayDat,
+                    NgayGiao = p.NgayGiao,
+                    PhiVanChuyen = p.PhiVanChuyen ?? 0,
+                    TrangThai = p.TrangThai.TenTrangThai,
+                });
+                return ordersConfirm;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Thực hiện lấy đơn xác nhận xảy ra lỗi");
+                throw;
+            }
+        }
+
         public async Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh)
         {
             var order = await _context.HoaDons.SingleOrDefaultAsync(hd => hd.MaHD == id && hd.MaKH == maKh);

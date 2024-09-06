@@ -14,6 +14,12 @@ namespace BookAPI.Services
         {
             _hoaDon = hoaDon;
         }
+
+        public Task<IEnumerable<HoaDonModel>> GetOderConfirm(string email, int page, int pageSize)
+        {
+            return _hoaDon.GetOderConfirm(email, page, pageSize);
+        }
+
         public async Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh)
         {
             return await _hoaDon.GetOrderByIdAsync(id , maKh);
