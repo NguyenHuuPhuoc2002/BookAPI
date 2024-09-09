@@ -160,7 +160,6 @@ namespace BookAPI.Repositories
             if (user != null)
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                Console.WriteLine(token);
                 var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
                 var link = _urlHelper.Action("ResetPassword", new { encodedToken });
                 var result = new LinkMailModel
