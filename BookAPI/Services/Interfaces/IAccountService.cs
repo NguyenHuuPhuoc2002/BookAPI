@@ -13,5 +13,7 @@ namespace BookAPI.Services.Interfaces
         public Task<ApplicationUser> FindByIdAsync(string id);
         public Task<IEnumerable<string>> GetRolesAsync(ApplicationUser model);
         Task<LinkMailModel> ForgetPassword(string email);
+        Task<string> GeneratePasswordResetTokenAsync(ApplicationUser model);
+        Task<bool> ResetPasswordAsync(ApplicationUser model, string token, string newPassword);
     }
 }

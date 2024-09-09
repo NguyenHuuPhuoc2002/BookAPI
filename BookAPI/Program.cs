@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -148,6 +149,12 @@ namespace BookAPI
 
             // Đăng ký AutoMapper
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
+
+            builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+            {
+                //reset password valid 2 hours
+                options.TokenLifespan = TimeSpan.FromHours(2);
+            });
 
             #region Cấu hình Mail
             // Thêm các dịch vụ vào DI container

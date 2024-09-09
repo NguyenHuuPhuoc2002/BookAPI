@@ -172,5 +172,46 @@ namespace BookAPI.Repositories
             }
             throw new KeyNotFoundException("Email is not exist");
         }
+        public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser model)
+        {
+            try
+            {
+                _logger.LogInformation("Thực hiện Generate Password Reset Token");
+                var token = await _userManager.GeneratePasswordResetTokenAsync(model);
+                _logger.LogInformation("Thực hiện Generate Password Reset Token thành công");
+                return token;
+            }
+            catch( Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện Generate Password Reset Token");
+                throw;
+            }
+        }
+        public async Task<bool> ResetPasswordAsync(ApplicationUser model, string token, string newPassword)
+        {
+            try
+            {
+                _logger.LogInformation("Thực hiện Reset Password cho {email}", model.UserName);
+                var user = await _userManager.FindByEmailAsync(model.UserName);
+                if (user == null)
+                {
+                    _logger.LogWarning("Không tìm thấy user: {email}", model.UserName);
+                    return false;
+                }
+                var resetPassword = await _userManager.ResetPasswordAsync(user, token, newPassword);
+                if (!resetPassword.Succeeded)
+                {
+                    _logger.LogError("Reset Password cho user: {email} không thành công", model.UserName);
+                    return false;
+                }
+                _logger.LogInformation("Reset Password cho user: {email} thành công", model.UserName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện Generate Password Reset Token");
+                throw;
+            }
+        }
     }
 }

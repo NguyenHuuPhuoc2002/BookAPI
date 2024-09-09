@@ -4,13 +4,18 @@ using BookAPI.Models;
 using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using MimeKit;
+using MimeKit.Text;
 using Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -28,19 +33,21 @@ namespace BookAPI.Controllers
         private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
         private readonly ILogger<AccountsController> _logger;
-        private readonly IMailService _mail;
+        private readonly IMailService _email;
+        private readonly UserManager<ApplicationUser> _userManager;
         private SecurityToken validatedToken;
 
         public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
                                    IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger,
-                                   IMailService mail)
+                                   IMailService mail, UserManager<ApplicationUser> userManager)
         {
             _account = account;
             _configuration = configuration;
             _refreshToken = refreshToken;
             _appSettings = optionsMonitor.CurrentValue;
             _logger = logger;
-            _mail = mail;
+            _email = mail;
+            _userManager = userManager;
         }
 
         [HttpPost("register")]
@@ -324,13 +331,18 @@ namespace BookAPI.Controllers
         [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(string email)
         {
+            
             var mail = await _account.ForgetPassword(email);
             var request = new MailRequest();
             request.ToEmail = email;
             request.Subject = "ForgetPassword";
             request.Body = mail.Link;
-            var result = await _mail.SendEmail(request);
-            return Ok(result);
+            var result = await _email.SendEmail(request);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Success"
+            });
         }
         [HttpPut("change-password")]
         [Authorize]
@@ -363,6 +375,72 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
 
+        }
+
+        [HttpPost("reset-password-token")]
+        public async Task<IActionResult> ResetPasswordToken([FromBody] ResetPasswordTokenModel model)
+        {           
+            var user = await _account.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ApiResponse
+                {
+                    Success = false,
+                    Message = "User không tồn tại"
+                });
+            }
+            var token = await _account.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+            return Ok(new { encodedToken = encodedToken });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordModel model)
+        {
+            var decodedBytes = WebEncoders.Base64UrlDecode(model.Token); 
+            var decodedToken = Encoding.UTF8.GetString(decodedBytes);
+
+            var user = await _account.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                return StatusCode(StatusCodes.Status404NotFound, new ApiResponse
+                {
+                    Success = false,
+                    Message = "User không tồn tại"
+                });
+            }
+            if (string.Compare(model.NewPassword, model.ConfirmPassword) != 0)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ApiResponse
+                {
+                    Success = false,
+                    Message = "NewPassword và ConfirmPassword không trùng khớp"
+                });
+            }
+            if (string.IsNullOrEmpty(model.Token))
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new ApiResponse
+                {
+                    Success = false,
+                    Message = "Token không hợp lệ"
+                });
+            }
+
+            var result = await _account.ResetPasswordAsync(user, decodedToken, model.NewPassword);
+            if (!result)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
+                {
+                    Success = false,
+                    Message = "Xảy ra lỗi khi reset password"
+                });
+            }
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Reset password thành công",
+                Data = model
+            });
         }
     }
 }

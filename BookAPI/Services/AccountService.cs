@@ -35,9 +35,19 @@ namespace BookAPI.Services
             return await _account.ForgetPassword(email);
         }
 
+        public async Task<string> GeneratePasswordResetTokenAsync(ApplicationUser model)
+        {
+            return await _account.GeneratePasswordResetTokenAsync(model);
+        }
+
         public async Task<IEnumerable<string>> GetRolesAsync(ApplicationUser model)
         {
             return await _account.GetRolesAsync(model);
+        }
+
+        public async Task<bool> ResetPasswordAsync(ApplicationUser model, string token, string newPassword)
+        {
+            return await _account.ResetPasswordAsync(model, token, newPassword);
         }
 
         public async Task<IdentityUser> SignInAsync(SignInModel model)

@@ -26,16 +26,14 @@ namespace Service
         public async Task<bool> SendEmail(MailRequest request)
         {
             var email = new MimeMessage();
-            email.From.Add(MailboxAddress.Parse(_configuration["EmailSetting:Email"]));
+            email.From.Add(MailboxAddress.Parse(_configuration.GetSection("EmailSetting:EmailUsername").Value));
             email.To.Add(MailboxAddress.Parse(request.ToEmail));
             email.Subject = request.Subject;
-            var builder = new BodyBuilder();
-            builder.HtmlBody = request.Body;
-            email.Body = builder.ToMessageBody();
+            email.Body = new TextPart(TextFormat.Html) { Text = request.Body };
 
             using var smtp = new SmtpClient();
-            smtp.Connect(_configuration["EmailSetting:Host"], 587, SecureSocketOptions.StartTls);
-            smtp.Authenticate(_configuration["EmailSetting:Email"], _configuration["EmailSetting:Password"]);
+            smtp.Connect(_configuration.GetSection("EmailSetting:EmailHost").Value, 587, SecureSocketOptions.StartTls);
+            smtp.Authenticate(_configuration.GetSection("EmailSetting:EmailUsername").Value, _configuration.GetSection("EmailSetting:EmailPassword").Value);
             smtp.Send(email);
             smtp.Disconnect(true);
 
