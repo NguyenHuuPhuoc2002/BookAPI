@@ -21,7 +21,6 @@ namespace BookAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetAll(int? page, int? pageSize)
         {
             int _page = page ?? 1;
@@ -45,7 +44,6 @@ namespace BookAPI.Controllers
         }
 
         [HttpGet("search")]
-        [Authorize]
         public async Task<IActionResult> Search(string key, int? page, int? pageSize)
         {
             int _page = page ?? 1;
@@ -82,7 +80,6 @@ namespace BookAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<IActionResult> GetById(int id)
         {
             try
@@ -109,7 +106,6 @@ namespace BookAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> AddPublisher(PublisherModel model)
         {
             try
@@ -156,7 +152,6 @@ namespace BookAPI.Controllers
         }
 
         [HttpPut]
-        [Authorize]
         public async Task<IActionResult> UpdatePublisher(PublisherModel model)
         {
             try
@@ -193,7 +188,6 @@ namespace BookAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
         public async Task<IActionResult> DeletePublisher(int id)
         {
             try
