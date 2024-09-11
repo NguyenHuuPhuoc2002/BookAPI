@@ -132,6 +132,8 @@ using System.Text;
             builder.Services.AddScoped<IAccountRepository, AccountRepository>();
             builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
             builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+            builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();
@@ -146,6 +148,8 @@ using System.Text;
             builder.Services.AddSingleton<IMailService, MailService>();
             builder.Services.AddScoped<IPublisherService, PublisherService>();
             builder.Services.AddScoped<ISupplierService, SupplierService>();
+            builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+            builder.Services.AddScoped<IRoleService, RoleService>();
             #endregion
 
             // Đăng ký AutoMapper
