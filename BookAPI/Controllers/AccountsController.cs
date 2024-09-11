@@ -79,6 +79,7 @@ namespace BookAPI.Controllers
                         {
                             Success = true,
                             Message = "Đăng kí thành công",
+                            Data = model
                         });
                     }
                 }

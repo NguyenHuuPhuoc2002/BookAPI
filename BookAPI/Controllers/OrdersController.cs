@@ -116,7 +116,7 @@ namespace BookAPI.Controllers
         }
 
         [HttpGet("orders-confirm")]
-        [Authorize]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> OrdersConfirm(int? page, int? pageSize)
         {
             int _page = page ?? 1; 
@@ -142,7 +142,7 @@ namespace BookAPI.Controllers
         }
 
         [HttpPut("confirm")]
-        [Authorize]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Confirm(Guid id)
         {
             try

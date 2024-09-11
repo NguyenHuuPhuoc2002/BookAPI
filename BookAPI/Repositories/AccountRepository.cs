@@ -143,11 +143,7 @@ namespace BookAPI.Repositories
 
             if (result.Succeeded)
             {
-                //kiểm tra role Customer có chưa
-                if (!await _roleManager.RoleExistsAsync(AppRole.CUSTOMER))
-                {
-                    await _roleManager.CreateAsync(new IdentityRole(AppRole.CUSTOMER));
-                }
+                
                 await _userManager.AddToRoleAsync(user, AppRole.CUSTOMER);
 
             }

@@ -1,7 +1,9 @@
 ﻿using BookAPI.Data;
+using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +57,7 @@ namespace BookAPI.Controllers
             }
         }
         [HttpPost("categories")]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Add(LoaiModel model)
         {
             try
@@ -96,7 +99,8 @@ namespace BookAPI.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
-        [HttpPut("update")] 
+        [HttpPut("update")]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Update(LoaiModel model)
         {
             try
@@ -128,6 +132,7 @@ namespace BookAPI.Controllers
             }
         }
         [HttpDelete("delete/{id}")]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Remove(string id)
         {
             try

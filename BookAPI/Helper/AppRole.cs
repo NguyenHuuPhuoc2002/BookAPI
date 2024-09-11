@@ -2,7 +2,7 @@
 {
     public class AppRole
     {
-        public const string ADMIN = "Administrator";
+        public const string ADMIN = "Admin";
         public const string CUSTOMER = "Customer";
         public const string Manager = "Manager";
         public const string Accountant = "Accountant";

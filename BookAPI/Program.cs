@@ -4,6 +4,7 @@ using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Seeding;
 using BookAPI.Services;
 using BookAPI.Services.Interfaces;
 using EcommerceWeb.Services;
@@ -22,12 +23,12 @@ using Service;
 using Service.Interface;
 using System.Text;
 
-namespace BookAPI
+/*namespace BookAPI
 {
     public class Program
     {
-        public static void Main(string[] args)
-        {
+        public static async void Main(string[] args)
+        {*/
             #region Logging
             // Cấu hình console để sử dụng UTF-8
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -189,7 +190,22 @@ namespace BookAPI
 
             app.MapControllers();
 
+            var scope = app.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            try
+            {
+                await context.Database.MigrateAsync();
+                await SeedData.Seed(context, roleManager);  
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "A problem occurred during migration");
+            }
+
             app.Run();
-        }
+/*        }
     }
-}
+}*/

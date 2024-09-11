@@ -1,4 +1,5 @@
-﻿using BookAPI.Models;
+﻿using BookAPI.Helper;
+using BookAPI.Models;
 using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,6 +10,7 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = AppRole.ADMIN)]
     public class PublishersController : ControllerBase
     {
         private readonly IPublisherService _publisher;

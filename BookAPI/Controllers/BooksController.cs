@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using BookAPI.Data;
+using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -139,6 +141,7 @@ namespace BookAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> AddBook([FromForm] SachAdminModel model)
         {
             try
@@ -189,6 +192,7 @@ namespace BookAPI.Controllers
             }
         }
         [HttpPut("{id}")]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> UpdateBook([FromForm] SachAdminModel model)
         {
             try
@@ -276,6 +280,7 @@ namespace BookAPI.Controllers
             }
         }
         [HttpDelete("{id}")]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Deletee(string id)
         {
             try
