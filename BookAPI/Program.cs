@@ -134,6 +134,7 @@ using System.Text;
             builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
             builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();
@@ -150,6 +151,7 @@ using System.Text;
             builder.Services.AddScoped<ISupplierService, SupplierService>();
             builder.Services.AddScoped<IUserRoleService, UserRoleService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
+            builder.Services.AddScoped<IUserService, UserService>();
             #endregion
 
             // Đăng ký AutoMapper
