@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using BookAPI.Data;
+using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +12,7 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = AppRole.ADMIN)]
     public class UsersController : ControllerBase
     {
         private readonly IUserService _user;

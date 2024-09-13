@@ -19,10 +19,10 @@ namespace BookAPI.Models
         public string PhoneNumber { get; set; }
 
     }
-    public class RoleModel
+    public class UserRoleModel
     {
-        public Guid UserID { get; set; }
-        public Guid RoleID { get; set; }
+        public string User { get; set; }
+        public string Role { get; set; }
 
     }
 }
