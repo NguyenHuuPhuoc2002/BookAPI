@@ -1,9 +1,10 @@
 ﻿using BookAPI.Data;
 using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface IGioHangRepository
+    public interface IGioHangRepository 
     {
         Task<IEnumerable<GioHang>> GetAllCartsAsync();
         Task<GioHang> GetCartByIdAsync(int id);

@@ -1,5 +1,6 @@
 ﻿using BookAPI.Helper;
 using BookAPI.Models;
+using BookAPI.Services;
 using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,27 +16,38 @@ namespace BookAPI.Controllers
     {
         private readonly IPublisherService _publisher;
         private readonly ILogger _logger;
+        private readonly CacheService _cacheService;
+        private readonly CacheSetting _cacheSetting;
 
-        public PublishersController(IPublisherService publisher, ILogger<PublishersController> logger)
+        public PublishersController(IPublisherService publisher, ILogger<PublishersController> logger,
+                                    CacheSetting cacheSetting, CacheService cacheService)
         {
             _publisher = publisher;
             _logger = logger;
+            _cacheService = cacheService;
+            _cacheSetting = cacheSetting;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll(int? page, int? pageSize)
         {
             int _page = page ?? 1;
-            int _pageSize = page ?? 5;
+            int _pageSize = pageSize ?? 9;
+            var cacheKey = Caches.CacheKeyAllPublishers = $"Publishers_All_{_page}_{_pageSize}";
             try
             {
                 _logger.LogInformation("Yêu cầu lấy tất cả nhà xuất bản trang {page}", _page);
-                var result = await _publisher.GetAllAsync(_page, _pageSize);
+                var publishers = _cacheService.GetCache<IEnumerable<PublisherModel>>(cacheKey);
+                if (publishers == null)
+                {
+                    publishers = await _publisher.GetAllAsync(_page, _pageSize);
+                    _cacheService.SetCache(cacheKey, publishers, _cacheSetting.Duration, _cacheSetting.SlidingExpiration);
+                }
                 return Ok(new ApiResponse
                 {
                     Success = true,
                     Message = "Lấy thành công",
-                    Data = result
+                    Data = publishers
                 });
             }
             catch (Exception ex)
@@ -49,28 +61,39 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> Search(string key, int? page, int? pageSize)
         {
             int _page = page ?? 1;
-            int _pageSize = pageSize ?? 5;
+            int _pageSize = pageSize ?? 9;
+            var cacheKey = Caches.CacheKeyAllPublishers = $"Publishers_{key}_{_page}_{_pageSize}";
             try
             {
                 _logger.LogInformation("Yêu cầu tìm kiếm nhà xuất bản theo tên {key} trang {page}", key, _page);
                 if (!string.IsNullOrEmpty(key))
                 {
-                    var result = await _publisher.SearchAsync(key, _page, _pageSize);
+                    var publishers = _cacheService.GetCache<IEnumerable<PublisherModel>>(cacheKey);
+                    if (publishers == null)
+                    {
+                        publishers = await _publisher.SearchAsync(key, _page, _pageSize);
+                        _cacheService.SetCache(cacheKey, publishers, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(15));
+                    }
                     return Ok(new ApiResponse
                     {
                         Success = true,
                         Message = "Tìm kiếm thành công",
-                        Data = result
+                        Data = publishers
                     });
                 }
                 else
                 {
-                    var result = await _publisher.GetAllAsync(_page, _pageSize);
+                    var publishers = _cacheService.GetCache<IEnumerable<PublisherModel>>(cacheKey);
+                    if (publishers == null)
+                    {
+                        publishers = await _publisher.GetAllAsync(_page, _pageSize);
+                        _cacheService.SetCache(cacheKey, publishers, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(15));
+                    }
                     return Ok(new ApiResponse
                     {
                         Success = true,
                         Message = "Tìm kiếm thành công",
-                        Data = result
+                        Data = publishers
                     });
                 }
             }
@@ -84,10 +107,16 @@ namespace BookAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var cacheKey = Caches.CacheKeyAllPublishers = $"Publisher_{id}";
             try
             {
                 _logger.LogInformation("Yêu cầu lấy nhà xuất bản theo id {id}", id);
-                var result = await _publisher.GetByIdAsync(id);
+                var result = _cacheService.GetCache<PublisherModel>(cacheKey);
+                if (result == null)
+                {
+                    result = await _publisher.GetByIdAsync(id);
+                    _cacheService.SetCache(cacheKey, result, _cacheSetting.Duration, _cacheSetting.SlidingExpiration);
+                }
                 if (result == null)
                 {
                     _logger.LogWarning("Không tìm thất nhà xuất bản có id {id}", id);
@@ -128,6 +157,7 @@ namespace BookAPI.Controllers
                     var result = await _publisher.AddAsync(model);
                     if (result)
                     {
+                        ClearCache();
                         _logger.LogInformation("Yêu cầu thêm nhà xuất bản thành công");
                         return Ok(new ApiResponse
                         {
@@ -164,6 +194,7 @@ namespace BookAPI.Controllers
                     var result = await _publisher.UpdateAsync(model);
                     if (result)
                     {
+                        ClearCache();
                         _logger.LogInformation("Yêu cầu cập nhật nhà xuất bản có id {id} thành công", model.MaNXB);
                         return Ok(new ApiResponse
                         {
@@ -196,7 +227,7 @@ namespace BookAPI.Controllers
             {
                 _logger.LogInformation("Yêu cầu xóa nhà xuất bản có id {id}", id);
                 var publisher = await _publisher.GetByIdAsync(id);
-                if(publisher == null)
+                if (publisher == null)
                 {
                     _logger.LogWarning("Không tìm thấy nhà xuất bản có id {id}", id);
                     return NotFound();
@@ -204,6 +235,7 @@ namespace BookAPI.Controllers
                 var result = await _publisher.DeleteAsync(id);
                 if (result)
                 {
+                    ClearCache();
                     _logger.LogInformation("Yêu cầu xóa nhà xuất bản có id {id} thành công", id);
                     return NoContent();
                 }
@@ -218,6 +250,13 @@ namespace BookAPI.Controllers
                 _logger.LogError(ex.Message, "Yêu cầu xóa nhà xuất bản xảy ra lỗi");
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        private void ClearCache()
+        {
+            _cacheService.RemoveCache(Caches.CacheKeyAllPublishers);
+            _cacheService.RemoveCache(Caches.CacheKeyPublisherID);
+            _cacheService.RemoveCache(Caches.CacheKeyPublisherSearch);
         }
     }
 }

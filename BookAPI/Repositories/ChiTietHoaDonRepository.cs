@@ -20,7 +20,18 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Thực hiện truy vấn lấy chi tiết hóa đơn");
-                var data = from ct in _context.ChiTietHoaDons
+                var result = await _context.ChiTietHoaDons.Include(p => p.Sach).Where(p => p.MaHD == id).ToListAsync();
+                var data = result.Select(p => new ChiTietHDModel
+                {
+                    MaCT = p.MaCT,
+                    MaHD = p.MaHD,
+                    MaSach = p.Sach.MaSach,
+                    DonGia = p.DonGia,
+                    SoLuong = p.SoLuong,
+                    GiamGia = p.GiamGia,
+                    Anh = p.Sach.Anh
+                }).ToList();
+               /* var data = from ct in _context.ChiTietHoaDons
                            join s in _context.Sachs on ct.MaSach equals s.MaSach
                            where ct.MaHD == id
                            select new ChiTietHDModel
@@ -33,8 +44,9 @@ namespace BookAPI.Repositories
                                GiamGia = ct.GiamGia,
                                Anh = s.Anh,
                            };
-                _logger.LogInformation("Thực hiện truy vấn lấy chi tiết hóa đơn thành công");
-                return await data.ToListAsync();
+               */ _logger.LogInformation("Thực hiện truy vấn lấy chi tiết hóa đơn thành công");
+               // return await data.ToListAsync();
+                return data;
             }
             catch (Exception ex)
             {

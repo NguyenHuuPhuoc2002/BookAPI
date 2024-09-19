@@ -1,9 +1,10 @@
 ﻿using BookAPI.Data;
 using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface IUserRepository
+    public interface IUserRepository 
     {
         Task<IEnumerable<ApplicationUser>> GetAllAsync(int page, int pageSize);
         Task<ApplicationUser> GetByEmailAsync(string email);

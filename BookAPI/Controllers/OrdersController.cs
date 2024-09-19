@@ -26,7 +26,7 @@ namespace BookAPI.Controllers
             _hoaDonCT = hoaDonCT;
         }
 
-        [HttpPost("orders")]
+        [HttpGet("orders")]
         [Authorize]
         public async Task<IActionResult> GetOrders(int? page, int? pageSize)
         {

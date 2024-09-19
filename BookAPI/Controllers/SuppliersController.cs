@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using BookAPI.Helper;
 using BookAPI.Models;
+using BookAPI.Services;
 using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -10,28 +11,39 @@ namespace BookAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = AppRole.ADMIN)]
+   // [Authorize(Roles = AppRole.ADMIN)]
     public class SuppliersController : ControllerBase
     {
         private readonly ISupplierService _supplier;
         private readonly ILogger<SuppliersController> _logger;
         private readonly IMapper _mapper;
+        private readonly CacheService _cacheService;
+        private readonly CacheSetting _cacheSetting;
 
-        public SuppliersController(ISupplierService supplier, ILogger<SuppliersController> logger, IMapper mapper)
+        public SuppliersController(ISupplierService supplier, ILogger<SuppliersController> logger, IMapper mapper,
+                                    CacheSetting cacheSetting, CacheService cacheService)
         {
             _supplier = supplier;
             _logger = logger;
             _mapper = mapper;
+            _cacheService = cacheService;
+            _cacheSetting = cacheSetting;
         }
         [HttpGet]
         public async Task<IActionResult> GetAll(int? page, int? pageSize)
         {
             int _page = page ?? 1;
-            int _pageSize = pageSize ?? 5;
+            int _pageSize = pageSize ?? 9;
+            var cacheKey = Caches.CacheKeyAllSuppliers= $"Suppliers_All_{_page}_{_pageSize}";
             try
             {
                 _logger.LogInformation("Yêu cầu lấy tất cả nhà cung cấp");
-                var suppliers = await _supplier.GetAllAsync(_page, _pageSize);
+                var suppliers = _cacheService.GetCache<IEnumerable<SupplierModel>>(cacheKey);
+                if( suppliers == null)
+                {
+                    suppliers = await _supplier.GetAllAsync(_page, _pageSize);
+                    _cacheService.SetCache(cacheKey, suppliers, _cacheSetting.Duration, _cacheSetting.SlidingExpiration);
+                }
                 _logger.LogInformation("Yêu cầu lấy tất cả nhà cung cấp thành công");
                 return Ok(new ApiResponse
                 {
@@ -49,10 +61,16 @@ namespace BookAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
+            var cacheKey = Caches.CacheKeySupplierID = $"Supplier_{id}";
             try
             {
                 _logger.LogInformation("Yêu cầu lấy nhà cung cấp {id}", id);
-                var supplier = await _supplier.GetById(id);
+                var supplier = _cacheService.GetCache<SupplierModel>(cacheKey);
+                if (supplier == null)
+                {
+                    supplier = await _supplier.GetById(id);
+                    _cacheService.SetCache(cacheKey, supplier, _cacheSetting.Duration, _cacheSetting.SlidingExpiration);
+                }
                 _logger.LogInformation("Yêu cầu lấy nhà cung cấp {id} thành công", id);
                 return Ok(new ApiResponse
                 {
@@ -71,17 +89,22 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> Search(string key, int? page, int? pageSize)
         {
             int _page = page ?? 1;
-            int _pageSize = pageSize ?? 5;
+            int _pageSize = pageSize ?? 9;
+            var cacheKey = Caches.CacheKeySuppliersSearch = $"Suppliers_{key}_{_page}_{_pageSize}";
             try
             {
-                IEnumerable<SupplierModel> suppliers;
-                if (key == null)
+                var suppliers = _cacheService.GetCache<IEnumerable<SupplierModel>>(cacheKey);
+                if(suppliers == null)
                 {
-                    suppliers = await _supplier.GetAllAsync(_page, _pageSize);
-                }
-                else
-                {
-                    suppliers = await _supplier.Search(key, _page, _pageSize);
+                    if (key == null)
+                    {
+                        suppliers = await _supplier.GetAllAsync(_page, _pageSize);
+                    }
+                    else
+                    {
+                        suppliers = await _supplier.Search(key, _page, _pageSize);
+                    }
+                    _cacheService.SetCache(cacheKey, suppliers, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(15));
                 }
                 return Ok(new ApiResponse
                 {
@@ -120,6 +143,7 @@ namespace BookAPI.Controllers
                         _logger.LogError("Lỗi yêu cầu thêm nhà cung cấp");
                         return StatusCode(500);
                     }
+                    ClearCache();
                     _logger.LogInformation("Yêu cầu thêm nhà cung cấp thành công");
                     return Ok(new ApiResponse
                     {
@@ -158,14 +182,19 @@ namespace BookAPI.Controllers
                             Message = "Không tìm thấy nhà cung cấp"
                         });
                     }
-                    await _supplier.UpdateAsync(model);
-                    _logger.LogInformation("Yêu cầu cập nhật nhà cung cấp {id} thành công", id);
-                    return Ok(new ApiResponse
+                    var result = await _supplier.UpdateAsync(model);
+                    if (result)
                     {
-                        Success = true,
-                        Message = "Cập nhật thành công",
-                        Data = model
-                    });
+                        ClearCache();
+                        _logger.LogInformation("Yêu cầu cập nhật nhà cung cấp {id} thành công", id);
+                        return Ok(new ApiResponse
+                        {
+                            Success = true,
+                            Message = "Cập nhật thành công",
+                            Data = model
+                        });
+                    }
+                    return StatusCode(500);
                 }
                 return BadRequest(new ApiResponse
                 {
@@ -196,15 +225,27 @@ namespace BookAPI.Controllers
                         Message = "Không tìm thấy nhà cung cấp"
                     });
                 }
-                await _supplier.DeleteAsync(id);
-                _logger.LogInformation("Yêu cầu xóa nhà cung cấp {id} thành công", id);
-                return NoContent();
+                var result = await _supplier.DeleteAsync(id);
+                if (result)
+                {
+                    ClearCache();
+                    _logger.LogInformation("Yêu cầu xóa nhà cung cấp {id} thành công", id);
+                    return NoContent();
+                }
+                return StatusCode(500);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message, "Lỗi yêu cầu xóa nhà cung cấp");
                 return StatusCode(500, ex.Message);
             }
+        }
+
+        private void ClearCache()
+        {
+            _cacheService.RemoveCache(Caches.CacheKeyAllSuppliers);
+            _cacheService.RemoveCache(Caches.CacheKeySupplierID);
+            _cacheService.RemoveCache(Caches.CacheKeySuppliersSearch);
         }
 
     }

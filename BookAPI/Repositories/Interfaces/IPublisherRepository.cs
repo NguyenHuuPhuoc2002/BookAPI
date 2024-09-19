@@ -1,8 +1,10 @@
-﻿using BookAPI.Models;
+﻿using BookAPI.Data;
+using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface IPublisherRepository
+    public interface IPublisherRepository 
     {
         Task<IEnumerable<PublisherModel>> GetAllAsync(int page, int pageSize);
         Task<IEnumerable<PublisherModel>> SearchAsync(string key, int page, int pageSize);

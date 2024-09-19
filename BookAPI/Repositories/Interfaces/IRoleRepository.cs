@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BookAPI.Repositories.RepositoryBase;
+using Microsoft.AspNetCore.Identity;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface IRoleRepository
+    public interface IRoleRepository 
     {
         Task<IEnumerable<IdentityRole>> GetRoleAllAsync();
         Task<IdentityRole> GetRoleByNameAsync(string roleName);

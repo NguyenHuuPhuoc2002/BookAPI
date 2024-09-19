@@ -1,9 +1,11 @@
-﻿using BookAPI.Models;
+﻿using BookAPI.Data;
+using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 using Microsoft.AspNetCore.Identity;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface IUserRoleRepository
+    public interface IUserRoleRepository 
     {
         Task<IEnumerable<UserRoleModel>> GetAllAsync(string email);
         Task<bool> AddRoleToUserAsync(string email, string roleName);

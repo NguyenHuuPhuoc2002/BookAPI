@@ -6,6 +6,7 @@ using BookAPI.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static System.Reflection.Metadata.BlobBuilder;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BookAPI.Repositories
@@ -79,36 +80,44 @@ namespace BookAPI.Repositories
             try
             {
                 _logger.LogInformation("Xây dựng truy vấn sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
-                var listBook = _context.Sachs.Include(l => l.Loai).Include(nxb => nxb.NhaXuatBan).Include(ncc => ncc.NhaCungCap).AsQueryable();
+
+                var listBook = _context.Sachs
+                    .Include(l => l.Loai) 
+                    .Include(nxb => nxb.NhaXuatBan) 
+                    .Include(ncc => ncc.NhaCungCap) 
+                    .AsQueryable();
+
                 if (!string.IsNullOrEmpty(maLoai))
                 {
                     _logger.LogInformation("Truy vấn sách theo MaLoai: {maLoai}", maLoai);
-                    listBook = _context.Sachs.Where(p => p.MaLoai == maLoai);
+                    listBook = listBook.Where(p => p.MaLoai == maLoai);
                 }
+
+                listBook = listBook.OrderByDescending(p => p.NgayNhap);
 
                 _logger.LogInformation("Số lượng sách trước phân trang: {listBook}", await listBook.CountAsync());
                 var data = PaginatedList<Sach>.Create(listBook, page, pageSize).ToList();
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
-                var result = (from s in data
-                              select new SachModel
-                              {
-                                  MaSach = s.MaSach,
-                                  MaLoai = s.MaLoai,
-                                  TenSach = s.TenSach,
-                                  Gia = s.Gia,
-                                  SoTap = s.SoTap,
-                                  Anh = s.Anh,
-                                  NgayNhap = s.NgayNhap,
-                                  TacGia = s.TacGia,
-                                  SoLuongTon = s.SoLuongTon,
-                                  MoTa = s.MoTa,
-                                  MaNCC = s.MaNCC,
-                                  MaNXB = s.MaNXB,
-                                  TenLoai = s.Loai.TenLoai,
-                                  TenNhaXuatBan = s.NhaXuatBan.TenNhaXuatBan,
-                                  TenNhaCungCap = s.NhaCungCap.TenCongTy
-                              }).OrderByDescending(p => p.NgayNhap);
+
+                var result = data.Select(s => new SachModel
+                {
+                    MaSach = s.MaSach,
+                    MaLoai = s.MaLoai,
+                    TenSach = s.TenSach,
+                    Gia = s.Gia,
+                    SoTap = s.SoTap,
+                    Anh = s.Anh,
+                    NgayNhap = s.NgayNhap,
+                    TacGia = s.TacGia,
+                    SoLuongTon = s.SoLuongTon,
+                    MoTa = s.MoTa,
+                    MaNCC = s.MaNCC,
+                    MaNXB = s.MaNXB,
+                    TenLoai = s.Loai?.TenLoai,
+                    TenNhaXuatBan = s.NhaXuatBan?.TenNhaXuatBan,
+                    TenNhaCungCap = s.NhaCungCap?.TenCongTy 
+                });
 
                 _logger.LogInformation("Truy vấn thành công lấy danh sách sách với MaLoai: {maLoai}, Trang: {page}, Kích thước trang: {pageSize}", maLoai, page, pageSize);
                 return result;
@@ -171,34 +180,33 @@ namespace BookAPI.Repositories
                 if (!string.IsNullOrWhiteSpace(key))
                 {
                     _logger.LogInformation("Truy vấn sách theo từ khóa: {key}", key);
-                    books = _context.Sachs.Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())
-                        || p.TacGia.ToLower().Contains(key.ToLower().Trim()));
-
+                    books = _context.Sachs
+                            .Include(l => l.Loai)
+                            .Include(nxb => nxb.NhaXuatBan)
+                            .Include(ncc => ncc.NhaCungCap)
+                            .Where(p => p.TenSach.ToLower().Contains(key.ToLower().Trim())|| p.TacGia.ToLower().Contains(key.ToLower().Trim()));
+                    books = books.OrderByDescending(p => p.NgayNhap);
                     var data = PaginatedList<Sach>.Create(books, page, pageSize);
 
                     _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
-                    var result = (from s in data
-                                  join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
-                                  join ncc in _context.NhaCungCaps on s.MaNCC equals ncc.MaNCC
-                                  join l in _context.Loais on s.MaLoai equals l.MaLoai
-                                  select new SachModel
-                                  {
-                                      MaSach = s.MaSach,
-                                      MaLoai = s.MaLoai,
-                                      TenSach = s.TenSach,
-                                      Gia = s.Gia,
-                                      SoTap = s.SoTap,
-                                      Anh = s.Anh,
-                                      NgayNhap = s.NgayNhap,
-                                      TacGia = s.TacGia,
-                                      SoLuongTon = s.SoLuongTon,
-                                      MoTa = s.MoTa,
-                                      MaNCC = s.MaNCC,
-                                      MaNXB = s.MaNXB,
-                                      TenNhaXuatBan = nxb.TenNhaXuatBan,
-                                      TenNhaCungCap = ncc.TenCongTy,
-                                      TenLoai = l.TenLoai,
-                                  });
+                    var result = data.Select(s => new SachModel
+                    {
+                        MaSach = s.MaSach,
+                        MaLoai = s.MaLoai,
+                        TenSach = s.TenSach,
+                        Gia = s.Gia,
+                        SoTap = s.SoTap,
+                        Anh = s.Anh,
+                        NgayNhap = s.NgayNhap,
+                        TacGia = s.TacGia,
+                        SoLuongTon = s.SoLuongTon,
+                        MoTa = s.MoTa,
+                        MaNCC = s.MaNCC,
+                        MaNXB = s.MaNXB,
+                        TenLoai = s.Loai?.TenLoai,
+                        TenNhaXuatBan = s.NhaXuatBan?.TenNhaXuatBan,
+                        TenNhaCungCap = s.NhaCungCap?.TenCongTy
+                    });
                     return result;
                 }
                 return null;
@@ -220,34 +228,34 @@ namespace BookAPI.Repositories
                 if (!string.IsNullOrWhiteSpace(key))
                 {
                     _logger.LogInformation("Truy vấn sách theo NXB: {key}", key);
-                    books = _context.Sachs.Where(p => p.NhaXuatBan.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
+                    books = _context.Sachs
+                            .Include(l => l.Loai)
+                            .Include(nxb => nxb.NhaXuatBan)
+                            .Include(ncc => ncc.NhaCungCap)
+                            .Where(p => p.NhaXuatBan.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
                 }
-
+                books = books.OrderByDescending(p => p.NgayNhap);
                 var data = PaginatedList<Sach>.Create(books, page, pageSize);
 
                 _logger.LogInformation("Số lượng sách sau phân trang: {data}", data.Count());
-                var result = (from s in data
-                              join nxb in _context.NhaXuatBans on s.MaNXB equals nxb.MaNXB
-                              join ncc in _context.NhaCungCaps on s.MaNCC equals ncc.MaNCC
-                              join l in _context.Loais on s.MaLoai equals l.MaLoai
-                              select new SachModel
-                              {
-                                  MaSach = s.MaSach,
-                                  MaLoai = s.MaLoai,
-                                  TenSach = s.TenSach,
-                                  Gia = s.Gia,
-                                  SoTap = s.SoTap,
-                                  Anh = s.Anh,
-                                  NgayNhap = s.NgayNhap,
-                                  TacGia = s.TacGia,
-                                  SoLuongTon = s.SoLuongTon,
-                                  MoTa = s.MoTa,
-                                  MaNCC = s.MaNCC,
-                                  MaNXB = s.MaNXB,
-                                  TenNhaXuatBan = nxb.TenNhaXuatBan,
-                                  TenNhaCungCap = ncc.TenCongTy,
-                                  TenLoai = l.TenLoai,
-                              });
+                var result = data.Select(s => new SachModel
+                {
+                    MaSach = s.MaSach,
+                    MaLoai = s.MaLoai,
+                    TenSach = s.TenSach,
+                    Gia = s.Gia,
+                    SoTap = s.SoTap,
+                    Anh = s.Anh,
+                    NgayNhap = s.NgayNhap,
+                    TacGia = s.TacGia,
+                    SoLuongTon = s.SoLuongTon,
+                    MoTa = s.MoTa,
+                    MaNCC = s.MaNCC,
+                    MaNXB = s.MaNXB,
+                    TenLoai = s.Loai?.TenLoai,
+                    TenNhaXuatBan = s.NhaXuatBan?.TenNhaXuatBan,
+                    TenNhaCungCap = s.NhaCungCap?.TenCongTy
+                });
                 return result;
             }
             catch (Exception ex)

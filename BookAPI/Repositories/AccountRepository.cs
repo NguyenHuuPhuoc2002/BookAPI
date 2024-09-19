@@ -20,8 +20,7 @@ namespace BookAPI.Repositories
         private readonly IUrlHelper _urlHelper;
 
         public AccountRepository(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
-            IConfiguration configuration, RoleManager<IdentityRole> roleManager, ILogger<AccountRepository> logger,
-            IMapper mapper, IUrlHelper urlHelper)
+            IConfiguration configuration, RoleManager<IdentityRole> roleManager, ILogger<AccountRepository> logger, IUrlHelper urlHelper)
         {
             _userManager = userManager;
             _signInManager = signInManager;

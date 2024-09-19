@@ -2,6 +2,7 @@
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services;
 using BookAPI.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,25 +16,37 @@ namespace BookAPI.Controllers
     public class CategoriesController : ControllerBase
     {
         private readonly ILoaiService _loai;
+        private readonly CacheService _cacheService;
+        private readonly CacheSetting _cacheSetting;
         private readonly ILogger<CategoriesController> _logger;
 
-        public CategoriesController(ILoaiService loai, ILogger<CategoriesController> logger) 
+        public CategoriesController(ILoaiService loai, ILogger<CategoriesController> logger,
+                                    CacheSetting cacheSetting, CacheService cacheService)
         {
             _loai = loai;
+            _cacheService = cacheService;
+            _cacheSetting = cacheSetting;
             _logger = logger;
         }
 
         [HttpGet("categories")]
-        public async Task<IActionResult> GetAllLoai() 
+        public async Task<IActionResult> GetAllLoai()
         {
+            string cacheKey = Caches.CacheKeyAllCategories = "Categories_All";
             try
             {
                 _logger.LogInformation("Nhận yêu cầu HTTP lấy tất cả loại");
-                var loais = await _loai.GetAllLoaiAsync();
+                var loais = _cacheService.GetCache<IEnumerable<LoaiModel>>(cacheKey);
+                if (loais == null)
+                {
+                    loais = await _loai.GetAllLoaiAsync();
+                    _cacheService.SetCache(cacheKey, loais, _cacheSetting.Duration, _cacheSetting.SlidingExpiration);
+                }
 
                 _logger.LogInformation("Trả về danh sách loại thành công, số lượng:{loais}", loais.Count());
                 return Ok(loais);
-            }catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError("Xảy ra lỗi khi xử lý yêu cầu HTTP lấy tất cả loại");
                 return StatusCode(StatusCodes.Status500InternalServerError);
@@ -42,10 +55,16 @@ namespace BookAPI.Controllers
         [HttpGet("categories/{id}")]
         public async Task<IActionResult> GetLoaiById(string id)
         {
+            string cacheKey = Caches.CacheKeyCategoryID = $"Category_{id}";
             try
             {
                 _logger.LogInformation("Nhận yêu cầu HTTP lấy một đối tượng loại theo mã {id}", id);
-                var loai = await _loai.GetLoaiByIdAsync(id);
+                var loai = _cacheService.GetCache<LoaiModel>(cacheKey);
+                if (loai == null)
+                {
+                    loai = await _loai.GetLoaiByIdAsync(id);
+                    _cacheService.SetCache(cacheKey, loai, _cacheSetting.Duration, _cacheSetting.SlidingExpiration);
+                }
 
                 _logger.LogInformation("Trả về một đối tượng loại(nếu có) thành công");
                 return Ok(loai);
@@ -77,6 +96,7 @@ namespace BookAPI.Controllers
                 var result = await _loai.AddAsync(model);
                 if (result)
                 {
+                    ClearCache();
                     _logger.LogInformation("Yêu cầu thêm loại thành công");
                     return Ok(new ApiResponse
                     {
@@ -109,6 +129,7 @@ namespace BookAPI.Controllers
                 var result = await _loai.UpdateAsync(model);
                 if (result)
                 {
+                    ClearCache();
                     _logger.LogInformation("Yêu cầu cập nhật loại {id} thành công", model.MaLoai);
                     return Ok(new ApiResponse
                     {
@@ -125,7 +146,7 @@ namespace BookAPI.Controllers
                     Data = null
                 });
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError("Yêu cầu cập nhật loai {id} không thành công", model.MaLoai);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
@@ -141,6 +162,7 @@ namespace BookAPI.Controllers
                 var result = await _loai.RemoveAsync(id);
                 if (result)
                 {
+                    ClearCache();
                     _logger.LogInformation("Yêu cầu xóa loại {id} thành công", id);
                     return NoContent();
                 }
@@ -155,6 +177,15 @@ namespace BookAPI.Controllers
             {
                 _logger.LogError(ex.Message, "Yêu cầu xóa loại không thành công {id}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        private void ClearCache()
+        {
+            _cacheService.RemoveCache(Caches.CacheKeyAllCategories);
+            if (Caches.CacheKeyCategoryID != null)
+            {
+                _cacheService.RemoveCache(Caches.CacheKeyCategoryID);
             }
         }
     }

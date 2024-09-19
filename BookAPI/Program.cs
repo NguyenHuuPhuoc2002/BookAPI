@@ -4,6 +4,7 @@ using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Repositories.UnitOfWork;
 using BookAPI.Seeding;
 using BookAPI.Services;
 using BookAPI.Services.Interfaces;
@@ -55,29 +56,42 @@ using System.Text;
             });
 
             builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("JWT"));
+            var cacheDurationInHours = builder.Configuration.GetValue<int>("CacheSettings:CacheDurationInHours");
+            var cacheSlidingExpirationInMinutes = builder.Configuration.GetValue<int>("CacheSettings:SlidingExpirationInMinutes");
+            var cacheDuration = TimeSpan.FromHours(cacheDurationInHours);
+            var cacheSlidingExpiration = TimeSpan.FromMinutes(cacheSlidingExpirationInMinutes);
+            builder.Services.AddSingleton(new CacheSetting
+            {
+                Duration = cacheDuration,
+                SlidingExpiration = cacheSlidingExpiration
+            });
+            builder.Services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 10240; // Giới hạn tổng kích thước bộ nhớ cache (10 MB)
+            });
 
             #region Identity
             //Identity
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-                .AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
-            //authentication - Token 
-            builder.Services.AddAuthentication(options => {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-            }).AddJwtBearer(options => {
-                options.SaveToken = true;
-                options.RequireHttpsMetadata = false;
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidAudience = builder.Configuration["JWT:ValidAudience"],
-                    ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
-                };
-            });
-            #endregion
+                                        .AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
+                                    //authentication - Token 
+                                    builder.Services.AddAuthentication(options => {
+                                        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                                        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                                        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                                    }).AddJwtBearer(options => {
+                                        options.SaveToken = true;
+                                        options.RequireHttpsMetadata = false;
+                                        options.TokenValidationParameters = new TokenValidationParameters
+                                        {
+                                            ValidateIssuer = true,
+                                            ValidateAudience = true,
+                                            ValidAudience = builder.Configuration["JWT:ValidAudience"],
+                                            ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
+                                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
+                                        };
+                                    });
+                                    #endregion
 
             builder.Host.UseSerilog();
             // Add services to the container.
@@ -135,6 +149,7 @@ using System.Text;
             builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
             builder.Services.AddScoped<IRoleRepository, RoleRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Service
             builder.Services.AddScoped<ISachService, SachService>();
@@ -152,6 +167,7 @@ using System.Text;
             builder.Services.AddScoped<IUserRoleService, UserRoleService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<CacheService>();
             #endregion
 
             // Đăng ký AutoMapper

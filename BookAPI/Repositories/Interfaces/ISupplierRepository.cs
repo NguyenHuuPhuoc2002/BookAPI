@@ -1,8 +1,10 @@
-﻿using BookAPI.Models;
+﻿using BookAPI.Data;
+using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface ISupplierRepository
+    public interface ISupplierRepository 
     {
         Task<bool> AddAsync(SupplierModel model);
         Task<bool> DeleteAsync(string id);

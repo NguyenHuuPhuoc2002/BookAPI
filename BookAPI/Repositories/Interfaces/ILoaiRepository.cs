@@ -1,5 +1,6 @@
 ﻿using BookAPI.Data;
 using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 
 namespace BookAPI.Repositories.Interfaces
 {

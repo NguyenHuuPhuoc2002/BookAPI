@@ -1,10 +1,11 @@
 ﻿using BookAPI.Data;
 using BookAPI.Models;
+using BookAPI.Repositories.RepositoryBase;
 using Newtonsoft.Json.Linq;
 
 namespace BookAPI.Repositories.Interfaces
 {
-    public interface ISachRepository
+    public interface ISachRepository 
     {
         Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize);
         Task<SachModel> GetBookByIdAsync(string id);
