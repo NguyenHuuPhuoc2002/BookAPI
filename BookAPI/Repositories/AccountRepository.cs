@@ -13,7 +13,6 @@ namespace BookAPI.Repositories
     public class AccountRepository : IAccountRepository
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IMapper _mapper;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IConfiguration _configuration;
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -25,7 +24,6 @@ namespace BookAPI.Repositories
             IMapper mapper, IUrlHelper urlHelper)
         {
             _userManager = userManager;
-            _mapper = mapper;
             _signInManager = signInManager;
             _configuration = configuration;
             _roleManager = roleManager;

@@ -95,9 +95,6 @@ namespace BookAPI.Controllers
                         Message = "Số trang và kích thước trang phải lớn hơn 0.",
                     });
                 }
-                int pageIndex = page ?? 1;
-                int pSize = pageSize ?? 9;
-
                 _logger.LogInformation("Nhận yêu cầu HTTP lấy tất cả sách theo keyWord {keyWord}, Trang: {pageIndex}, Kích thước trang: {pSize}", keyWord, pageIndex, pSize);
                 var books = await _sach.SearchBookAsync(keyWord, pageIndex, pSize);
 
@@ -124,9 +121,6 @@ namespace BookAPI.Controllers
                         Message = "Số trang và kích thước trang phải lớn hơn 0.",
                     });
                 }
-                int pageIndex = page ?? 1;
-                int pSize = pageSize ?? 9;
-
                 _logger.LogInformation("Nhận yêu cầu HTTP lấy tất cả sách theo NXB {keyWord}, Trang: {pageIndex}, Kích thước trang: {pSize}", keyWord, pageIndex, pSize);
                 var books = await _sach.SearchBookByNXBAsync(keyWord, pageIndex, pSize);
 
