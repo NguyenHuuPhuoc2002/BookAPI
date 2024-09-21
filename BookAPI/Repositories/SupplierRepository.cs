@@ -36,7 +36,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<bool> DeleteAsync(string id)
         {
             try
@@ -81,7 +80,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<IEnumerable<SupplierModel>> GetAllAsync(int page, int pageSize)
         {
             try
@@ -108,7 +106,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<SupplierModel> GetById(string id)
         {
             try
@@ -130,12 +127,10 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<IEnumerable<SupplierModel>> Search(string key, int page, int pageSize)
         {
             try
             {
-                _logger.LogInformation("Thực hiện tìm kiếm và lấy tất cả nhà cung cấp {key}", key);
                 var suppliers = _context.NhaCungCaps.Where(p => p.TenCongTy.ToLower().Contains(key.ToLower().Trim())).AsQueryable();
                 var pagination = PaginatedList<NhaCungCap>.Create(suppliers, page, pageSize).ToList();
                 var result = pagination.Select(p => new SupplierModel

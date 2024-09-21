@@ -34,7 +34,6 @@ namespace BookAPI.Controllers
         public CartsController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
                                 ILogger<CartsController> logger, ISachService sach, IMapper mapper)
         {
-           // maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _cart = cart;
             _cartItem = cartItem;
             _logger = logger;
@@ -43,7 +42,6 @@ namespace BookAPI.Controllers
             _vnPayService = vnPayService;
         }
         [HttpGet("payment-callback")]
-        [AllowAnonymous]
         public async Task<IActionResult> PaymentCallBack()
         {
             var cart = await _cart.GetCartByMaKhAsync(GlobalVariables.maKh);
@@ -103,11 +101,9 @@ namespace BookAPI.Controllers
                     dictionary[item.MaSach] = item.SoLuong;
                 }
                 await _sach.UpdateInventoryQuantity(dictionary);
-
                 _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
                 await _cartItem.ClearAllAsync(cart.GioHangId);
                 _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", GlobalVariables.maKh);
-
                 _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", GlobalVariables.maKh);
                 var order = _mapper.Map<HoaDonModel>(hoaDon);
                 return Ok(order);

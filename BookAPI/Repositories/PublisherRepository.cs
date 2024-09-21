@@ -26,7 +26,6 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Thực hiện truy vấn lấy tất cả nhà xuất bản trang {page}", page);
                 var publishers = _context.NhaXuatBans.AsQueryable();
                 var pagination = PaginatedList<NhaXuatBan>.Create(publishers, page, pageSize).ToList();
                 var result = pagination.Select(p => new PublisherModel
@@ -43,17 +42,10 @@ namespace BookAPI.Repositories
                 _logger.LogInformation("Thực hiện truy vấn lấy tất cả nhà xuất bản trang {page} thành công", page);
                 return result;
             }
-            catch (Exception ex) 
-            {
-                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện truy vấn lấy tất cả nhà xuất bản");
-                throw;
-            }
-        }
         public async Task<PublisherModel> GetByIdAsync(int id)
         {
             try
             {
-                _logger.LogInformation("Thực hiện truy vấn lấy nhà xuất bản {id}", id);
                 var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.MaNXB == id);
                 if(publisher == null)
                 {
@@ -100,7 +92,6 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Thực hiện thêm nhà xuất bản {Name} vào csdl", model.TenNhaXuatBan);
                 var result = _mapper.Map<NhaXuatBan>(model);
                 await _context.NhaXuatBans.AddAsync(result);
                 await _context.SaveChangesAsync();
@@ -117,7 +108,6 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Thực hiện xóa nhà xuất bản có id {id}", id);
                 var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.MaNXB ==  id);
                 if (publisher == null)
                 {
@@ -140,7 +130,6 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Thực hiện cập nhật nhà xuất bản có id {id}", model.MaNXB);
                 var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.MaNXB == model.MaNXB);
                 if(publisher == null)
                 {

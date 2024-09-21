@@ -172,8 +172,6 @@ namespace BookAPI.Repositories
         }
         public async Task<IEnumerable<SachModel>> SearchBookAsync(string key, int page, int pageSize)
         {
-            _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với Từ khóa: {key}, Trang: {page}, Kích thước trang: {pageSize}",
-                                    key, page, pageSize);
             var books = _context.Sachs.AsQueryable();
             try
             {
@@ -266,7 +264,6 @@ namespace BookAPI.Repositories
         }
         public async Task UpdateInventoryQuantity(Dictionary<string, int> books)
         {
-            _logger.LogInformation("Thực hiện cập nhật số lượng tồn");
             var bookIds = books.Keys.ToList();
             try
             {
@@ -284,7 +281,6 @@ namespace BookAPI.Repositories
                         {
                             _logger.LogWarning("Số lượng tồn của sách {maSach} đã hết", book.MaSach);
                             throw new Exception($"Số lượng tồn kho không đủ cho sách với mã ID {book.MaSach}. Số lượng tồn kho hiện tại: {book.SoLuongTon}");
-
                         }
                     }
                 }

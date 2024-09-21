@@ -20,7 +20,6 @@ namespace BookAPI.Repositories
             _mapper = mapper;
             _logger = logger;
         }
-
         public async Task<IEnumerable<HoaDonModel>> GetOderConfirm(string email, int page, int pageSize)
         {
             try
@@ -54,14 +53,12 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh)
         {
             var order = await _context.HoaDons.SingleOrDefaultAsync(hd => hd.MaHD == id && hd.MaKH == maKh);
             var result = _mapper.Map<HoaDonModel>(order);
             return result;
         }
-
         public async Task<IEnumerable<HoaDonModel>> GetOrdersByMaKhAsync(string maKh,int page, int pageSize)
         {
             try
@@ -99,7 +96,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task UpdateOrderStateAsync(Guid id, int state)
         {
             try

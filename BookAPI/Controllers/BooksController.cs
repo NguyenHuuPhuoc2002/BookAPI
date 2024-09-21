@@ -42,8 +42,6 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> GettAll(string? maLoai, int? page, int? pageSize)
         {
             string cacheKey = Caches.CacheKeyAllBook = $"Books_{page}_{pageSize}_{maLoai}";
-            try
-            {
                 if (page <= 0 || pageSize <= 0)
                 {
                     return BadRequest(new ApiResponse
@@ -56,31 +54,20 @@ namespace BookAPI.Controllers
                 int pSize = pageSize ?? 9;
                 _logger.LogInformation("Nhận yêu cầu HTTP lấy sách theo mã loại {maLoai} (nếu có) còn không thì lấy danh sách sách , Trang: {pageIndex}, Kích thước trang: {pSize}", maLoai, pageIndex, pSize);
                 var books = _cache.GetCache<IEnumerable<SachModel>>(cacheKey);
-
                 if (books == null)
                 {
                     books = await _sach.GetAllBooksAsync(maLoai, pageIndex, pSize);
                     _cacheSettings.SlidingExpiration = null;
                     _cache.SetCache(Caches.CacheKeyAllBook, books, _cacheSettings.Duration, _cacheSettings.SlidingExpiration);
                 }
-
                 _logger.LogInformation("Trả về danh sách sách thành công, số lượng: {books}", Caches.CacheKeyAllBook.Count());
                 return Ok(books);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Xảy ra lỗi khi xử lý yêu cầu HTTP lấy tất cả sách");
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             string cacheKey = Caches.CacheKeyBookId = $"Book_{id}";
-            try
-            {
-                _logger.LogInformation("Lấy toàn bộ sách theo mã sách {id}", id);
                 var book = _cache.GetCache<SachModel>(cacheKey);
                 if(book == null)
                 {
@@ -98,12 +85,6 @@ namespace BookAPI.Controllers
                     return NotFound();
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError("Lỗi khi lấy sách theo mã {id}", id);
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
 
         [HttpGet("search-by-name")]
         public async Task<IActionResult> SearchBook(string keyWord, int? page, int? pageSize)
@@ -176,11 +157,6 @@ namespace BookAPI.Controllers
         [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> AddBook([FromForm] SachAdminModel model)
         {
-            try
-            {
-                _logger.LogInformation("Yêu cầu thêm 1 quyển sách");
-                if (ModelState.IsValid)
-                {
                     var book = _mapper.Map<Sach>(model);
                     if(model.Image != null)
                     {
@@ -199,8 +175,6 @@ namespace BookAPI.Controllers
                         book.Anh = "";
                     }
                     var result = await _sach.AddAsync(book);
-                    if (result)
-                    {
                         _logger.LogInformation("Yêu cầu thêm sách {TenSach} thành công", model.TenSach);
                         ClearCacheBook();
                         return Ok(new ApiResponse
@@ -210,40 +184,12 @@ namespace BookAPI.Controllers
                             Data = model
                         });
                     }
-                }
-                _logger.LogError("Lỗi từ client");
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Thông tin sách không hợp lệ",
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Yêu cầu thêm sách không thành công");
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         [HttpPut("{id}")]
         [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> UpdateBook([FromForm] SachAdminModel model)
         {
-            try
-            {
-                _logger.LogInformation("Yêu cầu cập nhật sách {id}", model.MaSach);
                 string uploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
                 var book = await _sach.GetBookByIdAsync(model.MaSach);
-                if (book == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách {id}", model.MaSach);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false, 
-                        Message = "Không tìm thấy sách"
-                    });
-                }
-                if (ModelState.IsValid)
-                {                   
                     if (!string.IsNullOrEmpty(book.Anh))
                     {
                         string[] split = book.Anh.Split('/');
@@ -263,7 +209,6 @@ namespace BookAPI.Controllers
                         }
                         if (model.Image != null)
                         {
-                            
                             string imageName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
                             string filePath = Path.Combine(uploadsDir, imageName);
 
@@ -300,37 +245,11 @@ namespace BookAPI.Controllers
                         Data = book
                     });
                 }
-                _logger.LogError("Thông tin cập nhật sách {id} từ client không hợp lệ", model.MaSach);
-                return BadRequest(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Thông tin sách không hợp lệ"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Yêu cầu cập nhật sách không thành công");
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         [HttpDelete("{id}")]
         [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Deletee(string id)
         {
-            try
-            {
-                _logger.LogInformation("Yêu cầu xóa sách {id}", id);
                 var book = await _sach.GetBookByIdAsync(id);
-                if(book == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách {id}", id);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Không tìm thấy sách",
-                        Data = id
-                    });
-                }
                 string uploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
                 if (!string.IsNullOrEmpty(book.Anh))
                 {
@@ -357,31 +276,11 @@ namespace BookAPI.Controllers
                     ClearCacheBook();
                     return NoContent();    
                 }
-                _logger.LogError("Lỗi từ client");
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Đầu vào không hợp lệ",
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Yêu cầu cập nhật sách không thành công");
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
-
         private void ClearCacheBook()
         {
             _cache.RemoveCache(Caches.CacheKeyAllBook);
-            if(Caches.CacheKeyBookId != null)
-            {
                 _cache.RemoveCache(Caches.CacheKeyBookId);
-            }
-            if (Caches.CacheKeyBookSearch != null)
-            {
                 _cache.RemoveCache(Caches.CacheKeyBookSearch);
             }
         }
     }
-}

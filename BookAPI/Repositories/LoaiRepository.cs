@@ -24,7 +24,6 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Truy vấn lấy tất cả loại");
                 var loais = await _context.Loais.ToListAsync();
                 var result = loais.Select(p => new LoaiModel
                 {
@@ -45,7 +44,6 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Truy vấn lấy loại theo mã {id}", id);
                 var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == id);
 
                 if (loai == null)
@@ -74,23 +72,12 @@ namespace BookAPI.Repositories
                 _logger.LogInformation("Thực hiện thêm loại vào csdl thành công");
                 return true;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Thực hiện thêm loại vào csdl không thành công");
-                throw;
-            }
-        }
 
         public async Task<bool> RemoveAsync(string id)
         {
             try
             {
                 var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == id);
-                if(loai == null)
-                {
-                    _logger.LogWarning("Không tìm thấy loại {id}", id);
-                    return false;
-                }
                 _logger.LogInformation("Thực hiện xóa loại {id}", id);
                 _context.Loais.Remove(loai);
                 await _context.SaveChangesAsync();
@@ -115,7 +102,6 @@ namespace BookAPI.Repositories
                     return false;
                 }
                 var result = _mapper.Map(model, loai);
-                _logger.LogInformation("Thực hiện cập nhật loai {loai}", model.MaLoai);
                 _context.Update(result);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Thực hiện cập nhật loai {loai} thành công", model.MaLoai);
