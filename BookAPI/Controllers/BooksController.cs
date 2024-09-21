@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Caching.Memory;
 using static System.Reflection.Metadata.BlobBuilder;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -42,49 +43,45 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> GettAll(string? maLoai, int? page, int? pageSize)
         {
             string cacheKey = Caches.CacheKeyAllBook = $"Books_{page}_{pageSize}_{maLoai}";
-                if (page <= 0 || pageSize <= 0)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Số trang và kích thước trang phải lớn hơn 0.",
-                    });
-                }
-                int pageIndex = page ?? 1;
-                int pSize = pageSize ?? 9;
-                _logger.LogInformation("Nhận yêu cầu HTTP lấy sách theo mã loại {maLoai} (nếu có) còn không thì lấy danh sách sách , Trang: {pageIndex}, Kích thước trang: {pSize}", maLoai, pageIndex, pSize);
-                var books = _cache.GetCache<IEnumerable<SachModel>>(cacheKey);
-                if (books == null)
-                {
-                    books = await _sach.GetAllBooksAsync(maLoai, pageIndex, pSize);
-                    _cacheSettings.SlidingExpiration = null;
-                    _cache.SetCache(Caches.CacheKeyAllBook, books, _cacheSettings.Duration, _cacheSettings.SlidingExpiration);
-                }
-                _logger.LogInformation("Trả về danh sách sách thành công, số lượng: {books}", Caches.CacheKeyAllBook.Count());
-                return Ok(books);
+            if (page <= 0 || pageSize <= 0)
+            {
+                throw new MissingFieldException("Số trang và kích thước trang phải lớn hơn 0");
             }
+            int pageIndex = page ?? 1;
+            int pSize = pageSize ?? 9;
+            _logger.LogInformation("Nhận yêu cầu HTTP lấy sách theo mã loại {maLoai} (nếu có) còn không thì lấy danh sách sách , Trang: {pageIndex}, Kích thước trang: {pSize}", maLoai, pageIndex, pSize);
+            var books = _cache.GetCache<IEnumerable<SachModel>>(cacheKey);
+            if (books == null)
+            {
+                books = await _sach.GetAllBooksAsync(maLoai, pageIndex, pSize);
+                _cacheSettings.SlidingExpiration = null;
+                _cache.SetCache(Caches.CacheKeyAllBook, books, _cacheSettings.Duration, _cacheSettings.SlidingExpiration);
+            }
+            _logger.LogInformation("Trả về danh sách sách thành công, số lượng: {books}", Caches.CacheKeyAllBook.Count());
+            return Ok(books);
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
             string cacheKey = Caches.CacheKeyBookId = $"Book_{id}";
-                var book = _cache.GetCache<SachModel>(cacheKey);
-                if(book == null)
-                {
-                    book = await _sach.GetBookByIdAsync(id);
-                    _cache.SetCache(cacheKey, book, _cacheSettings.Duration, _cacheSettings.SlidingExpiration);
-                }
-                if (book != null)
-                {
-                    _logger.LogInformation("Lấy sách theo mã sách {id} thành công", id);
-                    return Ok(book);
-                }
-                else
-                {
-                    _logger.LogError("Không tìm thấy mã sách {id}", id);
-                    return NotFound();
-                }
+            var book = _cache.GetCache<SachModel>(cacheKey);
+            if (book == null)
+            {
+                book = await _sach.GetBookByIdAsync(id);
+                _cache.SetCache(cacheKey, book, _cacheSettings.Duration, _cacheSettings.SlidingExpiration);
             }
+            if (book != null)
+            {
+                _logger.LogInformation("Lấy sách theo mã sách {id} thành công", id);
+                return Ok(book);
+            }
+            else
+            {
+                _logger.LogError("Không tìm thấy mã sách {id}", id);
+                throw new KeyNotFoundException($"Không tìm thấy sách với mã {id}");
+            }
+        }
 
         [HttpGet("search-by-name")]
         public async Task<IActionResult> SearchBook(string keyWord, int? page, int? pageSize)
@@ -157,130 +154,139 @@ namespace BookAPI.Controllers
         [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> AddBook([FromForm] SachAdminModel model)
         {
-                    var book = _mapper.Map<Sach>(model);
-                    if(model.Image != null)
-                    {
-                        string uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
-                        string imageName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
-                        string filePath = Path.Combine(uploadDir, imageName);
+            if (!ModelState.IsValid)
+            {
+                throw new MissingFieldException("Thông tin vào không hợp lệ");
+            }
+            var book = _mapper.Map<Sach>(model);
+            if (model.Image != null)
+            {
+                string uploadDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
+                string imageName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
+                string filePath = Path.Combine(uploadDir, imageName);
 
-                        using (FileStream fs = new FileStream(filePath, FileMode.Create))
-                        {
-                            await model.Image.CopyToAsync(fs);
-                        }
-                        book.Anh = "Images/Sach/" + imageName;
-                    }
-                    else
-                    {
-                        book.Anh = "";
-                    }
-                    var result = await _sach.AddAsync(book);
-                        _logger.LogInformation("Yêu cầu thêm sách {TenSach} thành công", model.TenSach);
-                        ClearCacheBook();
-                        return Ok(new ApiResponse
-                        {
-                            Success = true,
-                            Message = "Thêm sách thành công",
-                            Data = model
-                        });
-                    }
-        [HttpPut("{id}")]
+                using (FileStream fs = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.Image.CopyToAsync(fs);
+                }
+                book.Anh = "Images/Sach/" + imageName;
+            }
+            else
+            {
+                book.Anh = "";
+            }
+            var result = await _sach.AddAsync(book);
+            _logger.LogInformation("Yêu cầu thêm sách {TenSach} thành công", model.TenSach);
+            ClearCacheBook();
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Thêm sách thành công",
+                Data = model
+            });
+        }
+        [HttpPut]
         [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> UpdateBook([FromForm] SachAdminModel model)
         {
-                string uploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
-                var book = await _sach.GetBookByIdAsync(model.MaSach);
-                    if (!string.IsNullOrEmpty(book.Anh))
+            if (!ModelState.IsValid)
+            {
+                throw new MissingFieldException("Thông tin vào không hợp lệ");
+            }
+            string uploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
+            var book = await _sach.GetBookByIdAsync(model.MaSach);
+            if (!string.IsNullOrEmpty(book.Anh))
+            {
+                string[] split = book.Anh.Split('/');
+                string image = split[2];
+                string oldfilePath = Path.Combine(uploadsDir, image);
+
+                try
+                {
+                    if (System.IO.File.Exists(oldfilePath))
                     {
-                        string[] split = book.Anh.Split('/');
-                        string image = split[2];
-                        string oldfilePath = Path.Combine(uploadsDir, image);
-
-                        try
-                        {
-                            if (System.IO.File.Exists(oldfilePath))
-                            {
-                                System.IO.File.Delete(oldfilePath);
-                            }
-                        }
-                        catch
-                        {
-                            ModelState.AddModelError("", "Xóa không thành công!");
-                        }
-                        if (model.Image != null)
-                        {
-                            string imageName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
-                            string filePath = Path.Combine(uploadsDir, imageName);
-
-                            using (FileStream fs = new FileStream(filePath, FileMode.Create))
-                            {
-                                await model.Image.CopyToAsync(fs);
-                            }
-                            book.Anh = "Images/Sach/" + imageName;
-                        }
-                        else
-                        {
-                            book.Anh = "";
-                        }
+                        System.IO.File.Delete(oldfilePath);
                     }
-                    book.TenSach = model.TenSach;
-                    book.Gia = model.Gia;
-                    book.SoTap = model.SoTap;
-                    book.NgayNhap = model.NgayNhap;
-                    book.TacGia = model.TacGia;
-                    book.MaLoai = model.MaLoai;
-                    book.SoLuongTon = model.SoLuongTon;
-                    book.MoTa = model.MoTa;
-                    book.MaNCC = model.MaNCC;
-                    book.MaNXB = model.MaNXB;
-
-                    var result = _mapper.Map<Sach>(book);
-                    await _sach.UpdateAsync(result);
-                    _logger.LogInformation("Yêu cầu cập nhật sách {id} thành công", model.MaSach);
-                    ClearCacheBook();
-                    return Ok(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Cập nhật thành công",
-                        Data = book
-                    });
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Xóa ảnh không thành công với mã sách {id}", model.MaSach);
+                    ModelState.AddModelError("", "Xóa không thành công!");
+                }
+                if (model.Image != null)
+                {
+                    string imageName = Guid.NewGuid().ToString() + "_" + model.Image.FileName;
+                    string filePath = Path.Combine(uploadsDir, imageName);
+
+                    using (FileStream fs = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Image.CopyToAsync(fs);
+                    }
+                    book.Anh = "Images/Sach/" + imageName;
+                }
+                else
+                {
+                    book.Anh = "";
+                }
+            }
+            book.TenSach = model.TenSach;
+            book.Gia = model.Gia;
+            book.SoTap = model.SoTap;
+            book.NgayNhap = model.NgayNhap;
+            book.TacGia = model.TacGia;
+            book.MaLoai = model.MaLoai;
+            book.SoLuongTon = model.SoLuongTon;
+            book.MoTa = model.MoTa;
+            book.MaNCC = model.MaNCC;
+            book.MaNXB = model.MaNXB;
+
+            var result = _mapper.Map<Sach>(book);
+            await _sach.UpdateAsync(result);
+            _logger.LogInformation("Yêu cầu cập nhật sách {id} thành công", model.MaSach);
+            ClearCacheBook();
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Cập nhật thành công",
+                Data = book
+            });
+        }
         [HttpDelete("{id}")]
         [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Deletee(string id)
         {
-                var book = await _sach.GetBookByIdAsync(id);
-                string uploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
-                if (!string.IsNullOrEmpty(book.Anh))
-                {
-                    string[] split = book.Anh.Split('/');
-                    string image = split[2];
-                    string oldfilePath = Path.Combine(uploadsDir, image);
+            var book = await _sach.GetBookByIdAsync(id);
+            string uploadsDir = Path.Combine(_webHostEnvironment.WebRootPath, "Images/Sach/");
+            if (!string.IsNullOrEmpty(book.Anh))
+            {
+                string[] split = book.Anh.Split('/');
+                string image = split[2];
+                string oldfilePath = Path.Combine(uploadsDir, image);
 
-                    try
-                    {
-                        if (System.IO.File.Exists(oldfilePath))
-                        {
-                            System.IO.File.Delete(oldfilePath);
-                        }
-                    }
-                    catch
-                    {
-                        ModelState.AddModelError("", "Xóa không thành công!");
-                    }
-                }
-                var result = await _sach.DeleteAsync(id);
-                if (result)
+                try
                 {
-                    _logger.LogInformation("Yêu cầu xóa sách {id} thành công", id);
-                    ClearCacheBook();
-                    return NoContent();    
+                    if (System.IO.File.Exists(oldfilePath))
+                    {
+                        System.IO.File.Delete(oldfilePath);
+                    }
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Xóa ảnh không thành công với mã sách {id}", id);
+                    ModelState.AddModelError("", "Xóa không thành công!");
+                }
+            }
+            var result = await _sach.DeleteAsync(id);
+
+            _logger.LogInformation("Yêu cầu xóa sách {id} thành công", id);
+            ClearCacheBook();
+            return NoContent();
+        }
         private void ClearCacheBook()
         {
             _cache.RemoveCache(Caches.CacheKeyAllBook);
-                _cache.RemoveCache(Caches.CacheKeyBookId);
-                _cache.RemoveCache(Caches.CacheKeyBookSearch);
-            }
+            _cache.RemoveCache(Caches.CacheKeyBookId);
+            _cache.RemoveCache(Caches.CacheKeyBookSearch);
         }
     }
+}

@@ -3,6 +3,7 @@ using BookAPI.Data;
 using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using static System.Reflection.Metadata.BlobBuilder;
@@ -24,6 +25,7 @@ namespace BookAPI.Repositories
 
         public async Task<IEnumerable<PublisherModel>> GetAllAsync(int page, int pageSize)
         {
+            await Task.CompletedTask;
             try
             {
                 var publishers = _context.NhaXuatBans.AsQueryable();
@@ -42,6 +44,12 @@ namespace BookAPI.Repositories
                 _logger.LogInformation("Thực hiện truy vấn lấy tất cả nhà xuất bản trang {page} thành công", page);
                 return result;
             }
+            catch (Exception ex) 
+            {
+                _logger.LogError(ex, "Xảy ra lỗi khi thực hiện truy vấn lấy tất cả nhà xuất bản");
+                throw;
+            }
+        }
         public async Task<PublisherModel> GetByIdAsync(int id)
         {
             try
@@ -50,7 +58,7 @@ namespace BookAPI.Repositories
                 if(publisher == null)
                 {
                     _logger.LogWarning("Không tìm thấy nhà xuất bản {id}", id);
-                    return null;
+                    throw new KeyNotFoundException($"Không tìm thấy nhà xuất bản {id}");
                 }
                 var result = _mapper.Map<PublisherModel>(publisher);
                 _logger.LogInformation("Thực hiện truy vấn lấy nhà xuất bản {id}", id);
@@ -58,12 +66,13 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện truy vấn lấy nhà xuất bản theo {id}", id);
+                _logger.LogError(ex, "Xảy ra lỗi khi thực hiện truy vấn lấy nhà xuất bản theo {id}", id);
                 throw;
             }
         }
         public async Task<IEnumerable<PublisherModel>> SearchAsync(string key, int page, int pageSize)
         {
+            await Task.CompletedTask;
             try
             {
                 _logger.LogInformation("Thực hiện tìm kiếm nhà xuất bản {key}", key);
@@ -92,6 +101,13 @@ namespace BookAPI.Repositories
         {
             try
             {
+                var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.MaNXB == model.MaNXB ||
+                                                                                p.TenNhaXuatBan.ToLower() == model.TenNhaXuatBan.ToLower().Trim());
+                if (publisher != null)
+                {
+                    _logger.LogWarning("Nhà xuất bản đã tồn tại");
+                    throw new DuplicateException("Nhà xuất bản đã tồn tại");
+                }
                 var result = _mapper.Map<NhaXuatBan>(model);
                 await _context.NhaXuatBans.AddAsync(result);
                 await _context.SaveChangesAsync();
@@ -111,8 +127,8 @@ namespace BookAPI.Repositories
                 var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.MaNXB ==  id);
                 if (publisher == null)
                 {
-                    _logger.LogWarning("Không tìm thấy nhà xuất bản có id {id}", id);
-                    return false;
+                    _logger.LogWarning("Không tìm thấy nhà xuất bản {id}", id);
+                    throw new KeyNotFoundException($"Không tìm thấy nhà xuất bản {id}");
                 }
                 var result = _mapper.Map<NhaXuatBan>(publisher);
                 _context.NhaXuatBans.Remove(result);
@@ -134,7 +150,7 @@ namespace BookAPI.Repositories
                 if(publisher == null)
                 {
                     _logger.LogWarning("Không tìm thấy nhà xuất bản có id {id}", model.MaNXB);
-                    return false;
+                    throw new KeyNotFoundException($"Không tìm thấy nhà xuất bản có id {model.MaNXB}");
                 }
                 var result = _mapper.Map(model, publisher);
                 _context.NhaXuatBans.Update(result);
@@ -152,12 +168,11 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Thực hiện truy vấn lấy nhà xuất bản {id}", key);
-                var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.TenNhaXuatBan.ToLower().Contains(key.ToLower().Trim()));
+                var publisher = await _context.NhaXuatBans.SingleOrDefaultAsync(p => p.TenNhaXuatBan.ToLower() == key.ToLower().Trim());
                 if (publisher == null)
                 {
                     _logger.LogWarning("Không tìm thấy nhà xuất bản {id}", key);
-                    return null;
+                    throw new KeyNotFoundException($"Không tìm thấy nhà xuất bản {key}");
                 }
                 var result = _mapper.Map<PublisherModel>(publisher);
                 _logger.LogInformation("Thực hiện truy vấn lấy nhà xuất bản {id} thành công", key);

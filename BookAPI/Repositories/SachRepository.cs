@@ -3,6 +3,7 @@ using BookAPI.Data;
 using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -28,6 +29,13 @@ namespace BookAPI.Repositories
         {
             try
             {
+                var book = await _context.Sachs.SingleOrDefaultAsync(p => p.MaSach == model.MaSach || 
+                                                                p.TenSach.ToLower() == model.TenSach.ToLower().Trim());
+                if(book != null)
+                {
+                    _logger.LogInformation("Sách đã tồn tại");
+                    throw new DuplicateException("Sách đã tồn tại");
+                }
                 await _context.AddAsync(model);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Thực hiện thêm sách {id} thành công", model.TenSach);
@@ -35,8 +43,8 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện thêm sách");
-                throw ex;
+                _logger.LogError(ex, "Xảy ra lỗi khi thực hiện thêm sách");
+                throw;
             }
         }
         public async Task<bool> DeleteAsync(string id)
@@ -47,7 +55,7 @@ namespace BookAPI.Repositories
                 if (book == null)
                 {
                     _logger.LogWarning("Không tìm thấy sách {id}", id);
-                    return false;
+                    throw new KeyNotFoundException("Sách không tồn tại");
                 }
                 _context.Sachs.Remove(book);
                 await _context.SaveChangesAsync();
@@ -63,7 +71,7 @@ namespace BookAPI.Repositories
         public async Task<bool> UpdateAsync(Sach model)
         {
             try
-            {
+            {               
                 _context.Sachs.Update(model);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Thực hiện cập nhật sách thành công");
@@ -71,8 +79,8 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện cập nhật sách");
-                throw ex;
+                _logger.LogError(ex, "Xảy ra lỗi khi thực hiện cập nhật sách");
+                throw;
             }
         }
         public async Task<IEnumerable<SachModel>> GetAllBooksAsync(string? maLoai, int page, int pageSize)
@@ -157,6 +165,7 @@ namespace BookAPI.Repositories
                 if (result == null)
                 {
                     _logger.LogWarning("Truy vấn lấy sách với ID {id} không tìm thấy.", id);
+                    throw new KeyNotFoundException($"Không tìm thấy sách với mã {id}");
                 }
                 else
                 {
@@ -172,6 +181,7 @@ namespace BookAPI.Repositories
         }
         public async Task<IEnumerable<SachModel>> SearchBookAsync(string key, int page, int pageSize)
         {
+            await Task.CompletedTask;
             var books = _context.Sachs.AsQueryable();
             try
             {
@@ -219,8 +229,7 @@ namespace BookAPI.Repositories
         {
             try
             {
-                _logger.LogInformation("Xây dựng truy vấn tìm kiếm sách với theo NXB: {key}, Trang: {page}, Kích thước trang: {pageSize}",
-                                    key, page, pageSize);
+                await Task.CompletedTask;
                 var books = _context.Sachs.AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(key))
@@ -263,7 +272,7 @@ namespace BookAPI.Repositories
             }
         }
         public async Task UpdateInventoryQuantity(Dictionary<string, int> books)
-        {
+        {          
             var bookIds = books.Keys.ToList();
             try
             {
@@ -280,7 +289,7 @@ namespace BookAPI.Repositories
                         if (book.SoLuongTon < 0)
                         {
                             _logger.LogWarning("Số lượng tồn của sách {maSach} đã hết", book.MaSach);
-                            throw new Exception($"Số lượng tồn kho không đủ cho sách với mã ID {book.MaSach}. Số lượng tồn kho hiện tại: {book.SoLuongTon}");
+                            throw new MissingFieldException($"Số lượng tồn kho không đủ cho sách với mã ID {book.MaSach}. Số lượng tồn kho hiện tại: {book.SoLuongTon}");
                         }
                     }
                 }

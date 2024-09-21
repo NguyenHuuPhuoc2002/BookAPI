@@ -16,6 +16,7 @@ using EcommerceWeb.ViewModels;
 using EcommerceWeb.Services;
 using Azure;
 using System.Security.Claims;
+using Common.Exceptions;
 
 namespace BookAPI.Controllers
 {
@@ -41,7 +42,7 @@ namespace BookAPI.Controllers
             _mapper = mapper;
             _vnPayService = vnPayService;
         }
-        [HttpGet("payment-callback")]
+        [HttpGet("PaymentCallBack")]
         public async Task<IActionResult> PaymentCallBack()
         {
             var cart = await _cart.GetCartByMaKhAsync(GlobalVariables.maKh);
@@ -49,11 +50,11 @@ namespace BookAPI.Controllers
             var response = _vnPayService.PaymentExecute(Request.Query);
             if (response == null)
             {
-                return NotFound();
+                throw new KeyNotFoundException();
             }
             else if (response.VnPayResponseCode != "00")
             {
-                return BadRequest();
+                throw new AppException("Thanh toán không thành công");
             }
             #region Tạo Đơn Hàng
 
@@ -76,10 +77,11 @@ namespace BookAPI.Controllers
             await _cart.BeginTransactionAsync();
             try
             {
-                await _cart.CommitTransactionAsync();
+                // Thêm hóa đơn
                 await _cart.AddHoaDonAsync(hoaDon);
                 _logger.LogInformation("Thêm đơn hàng thành công");
 
+                // Thêm chi tiết đơn hàng
                 _logger.LogInformation("Thêm chi tiết đơn hàng");
                 var cthds = new List<ChiTietHoaDon>();
                 foreach (var item in cartItems)
@@ -95,6 +97,7 @@ namespace BookAPI.Controllers
                 }
                 await _cart.AddRangeChiTietHdAsync(cthds);
 
+                // Cập nhật số lượng tồn kho
                 var dictionary = new Dictionary<string, int>();
                 foreach (var item in cartItems)
                 {
@@ -102,18 +105,29 @@ namespace BookAPI.Controllers
                 }
                 await _sach.UpdateInventoryQuantity(dictionary);
                 _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
+                // Xóa các mặt hàng trong giỏ hàng của khách hàng
+                // Commit transaction sau khi tất cả các thao tác đã hoàn thành
+                await _cart.CommitTransactionAsync();
                 await _cartItem.ClearAllAsync(cart.GioHangId);
                 _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", GlobalVariables.maKh);
                 _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", GlobalVariables.maKh);
+                // Trả về kết quả
                 var order = _mapper.Map<HoaDonModel>(hoaDon);
-                return Ok(order);
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Thanh toán thành công",
+                    Data = order
+                });
             }
             catch (Exception ex)
             {
+                // Rollback transaction nếu có lỗi xảy ra
                 await _cart.RollbackTransactionAsync();
                 _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.maKh);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
+
             #endregion
         }
         [HttpGet]

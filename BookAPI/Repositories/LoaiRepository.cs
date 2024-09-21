@@ -3,6 +3,7 @@ using BookAPI.Data;
 using BookAPI.Database;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookAPI.Repositories
@@ -13,7 +14,7 @@ namespace BookAPI.Repositories
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
-        public LoaiRepository(DataContext context, ILogger<LoaiRepository> logger, IMapper mapper) 
+        public LoaiRepository(DataContext context, ILogger<LoaiRepository> logger, IMapper mapper)
         {
             _context = context;
             _logger = logger;
@@ -49,6 +50,7 @@ namespace BookAPI.Repositories
                 if (loai == null)
                 {
                     _logger.LogWarning("Không tìm thấy loại với mã {LoaiId}", id);
+                    throw new KeyNotFoundException($"Không tìm thấy lọai {id}");
                 }
 
                 var result = _mapper.Map<LoaiModel>(loai);
@@ -65,6 +67,12 @@ namespace BookAPI.Repositories
         {
             try
             {
+                var exist = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == model.MaLoai ||
+                                                                  p.TenLoai.ToLower().Contains(model.TenLoai.ToLower().Trim()));
+                if (exist != null)
+                {
+                    throw new DuplicateException("Loại đã tồn tại");
+                }
                 var result = _mapper.Map<Loai>(model);
                 _logger.LogInformation("Thực hiện thêm loại vào csdl");
                 await _context.AddAsync(result);
@@ -72,13 +80,23 @@ namespace BookAPI.Repositories
                 _logger.LogInformation("Thực hiện thêm loại vào csdl thành công");
                 return true;
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Thực hiện thêm loại không thành công");
+                throw; 
+            }
+        }
 
         public async Task<bool> RemoveAsync(string id)
         {
             try
             {
                 var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == id);
-                _logger.LogInformation("Thực hiện xóa loại {id}", id);
+                if (loai == null)
+                {
+                    _logger.LogWarning("Không tìm thấy loại với mã {LoaiId}", id);
+                    throw new KeyNotFoundException($"Không tìm thấy lọai {id}");
+                }
                 _context.Loais.Remove(loai);
                 await _context.SaveChangesAsync();
                 _logger.LogInformation("Thực hiện xóa loại {id}t thành công", id);
@@ -86,7 +104,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, "Thực hiện xóa loại không thành công");
+                _logger.LogError(ex, "Thực hiện xóa loại không thành công");
                 throw;
             }
         }
@@ -96,10 +114,10 @@ namespace BookAPI.Repositories
             try
             {
                 var loai = await _context.Loais.SingleOrDefaultAsync(p => p.MaLoai == model.MaLoai);
-                if(loai == null)
+                if (loai == null)
                 {
                     _logger.LogWarning("Không tìm thấy loai {maloai}", model.MaLoai);
-                    return false;
+                    throw new KeyNotFoundException($"Không tìm thấy lọai {model.MaLoai}");
                 }
                 var result = _mapper.Map(model, loai);
                 _context.Update(result);
@@ -109,7 +127,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, "Thực hiện cập nhập loai không thành công");
+                _logger.LogError(ex, "Thực hiện cập nhập loai không thành công");
                 throw;
             }
         }

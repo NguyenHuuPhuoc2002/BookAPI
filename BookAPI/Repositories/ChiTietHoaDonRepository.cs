@@ -31,21 +31,7 @@ namespace BookAPI.Repositories
                     GiamGia = p.GiamGia,
                     Anh = p.Sach.Anh
                 }).ToList();
-               /* var data = from ct in _context.ChiTietHoaDons
-                           join s in _context.Sachs on ct.MaSach equals s.MaSach
-                           where ct.MaHD == id
-                           select new ChiTietHDModel
-                           {
-                               MaCT = ct.MaCT,
-                               MaHD = ct.MaHD,
-                               MaSach = s.MaSach,
-                               DonGia = ct.DonGia,
-                               SoLuong = ct.SoLuong,
-                               GiamGia = ct.GiamGia,
-                               Anh = s.Anh,
-                           };
-               */ _logger.LogInformation("Thực hiện truy vấn lấy chi tiết hóa đơn thành công");
-               // return await data.ToListAsync();
+                _logger.LogInformation("Thực hiện truy vấn lấy chi tiết hóa đơn thành công");
                 return data;
             }
             catch (Exception ex)

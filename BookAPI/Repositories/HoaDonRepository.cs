@@ -22,6 +22,7 @@ namespace BookAPI.Repositories
         }
         public async Task<IEnumerable<HoaDonModel>> GetOderConfirm(string email, int page, int pageSize)
         {
+            await Task.CompletedTask;
             try
             {
                 _logger.LogInformation("Thực hiện lấy đơn hàng chờ xác nhận");
@@ -56,11 +57,17 @@ namespace BookAPI.Repositories
         public async Task<HoaDonModel> GetOrderByIdAsync(Guid id, string maKh)
         {
             var order = await _context.HoaDons.SingleOrDefaultAsync(hd => hd.MaHD == id && hd.MaKH == maKh);
+            if (order == null)
+            {
+                _logger.LogWarning("Không tìm thấy hóa đơn với id {id} , maKh {maKh}", id, maKh);
+                throw new KeyNotFoundException("Không tìm thấy hóa đơn");
+            }
             var result = _mapper.Map<HoaDonModel>(order);
             return result;
         }
         public async Task<IEnumerable<HoaDonModel>> GetOrdersByMaKhAsync(string maKh,int page, int pageSize)
         {
+            await Task.CompletedTask;
             try
             {
                 _logger.LogInformation("Thực hiện truy vấn lấy hóa đơn của {maKh}", maKh);
@@ -101,6 +108,11 @@ namespace BookAPI.Repositories
             try
             {
                 var order = await _context.HoaDons.SingleOrDefaultAsync(p => p.MaHD == id);
+                if (order == null)
+                {
+                    _logger.LogWarning("Không tìm thấy đơn hàng {id}", id);
+                    throw new KeyNotFoundException($"Không tìm thấy đơn hàng {id}");
+                }
                 _logger.LogInformation("Thực hiện cập nhật trạng thái của đơn hàng {maHD}", id);
                 order.MaTrangThai = state;
                 var result = _context.HoaDons.Update(order);
