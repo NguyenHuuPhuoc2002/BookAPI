@@ -120,10 +120,6 @@ namespace BookAPI.Repositories
                 var cart = await _context.GioHangChiTiets.SingleOrDefaultAsync(p => p.GioHangId == id &&
                                                                                     p.MaSach == maSach);
 
-                if (cart == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách với mã sách {maSach} trong giỏ", maSach);
-                }
                 var result = _mapper.Map<CartModel>(cart);
                 _logger.LogInformation("Trả về một đối tượng sách thành công");
                 return result;

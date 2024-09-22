@@ -23,8 +23,6 @@ namespace BookAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRoleAll()
         {
-            try
-            {
                 var result = await _role.GetRoleAllAsync();
                 return Ok(new ApiResponse
                 {
@@ -33,21 +31,10 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRoleById(string id)
         {
-            try
-            {
                 var result = await _role.GetRoleByIdAsync(id);
-                if(result == null)
-                {
-                    return NotFound();
-                }
                 return Ok(new ApiResponse
                 {
                     Success = true,
@@ -55,19 +42,10 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
         [HttpPost]
         public async Task<IActionResult> AddRole(string roleName)
         {
-            try
-            {
                 var result = await _role.AddRoleAsync(roleName);
-                if (result)
-                {
                     return Ok(new ApiResponse
                     {
                         Success = true,
@@ -75,26 +53,10 @@ namespace BookAPI.Controllers
                         Data = result
                     });
                 }
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
         [HttpDelete]
         public async Task<IActionResult> DeleteRole(string id)
         {
-            try
-            {
-                var findRole = await _role.GetRoleByIdAsync(id);
-                if (findRole == null)
-                {
-                    return NotFound();
-                }
                 var result = await _role.DeleteRoleAsync(id);
-                if (result)
-                {
                     return Ok(new ApiResponse
                     {
                         Success = true,
@@ -102,26 +64,10 @@ namespace BookAPI.Controllers
                         Data = result
                     });
                 }
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
         [HttpPut]
         public async Task<IActionResult> UpdateRole(IdentityRole role)
         {
-            try
-            {
-                var findRole = await _role.GetRoleByIdAsync(role.Id);
-                if (findRole == null)
-                {
-                    return NotFound();
-                }
                 var result = await _role.UpdateRoleAsync(role);
-                if (result)
-                {
                     return Ok(new ApiResponse
                     {
                         Success = true,
@@ -131,11 +77,5 @@ namespace BookAPI.Controllers
                 }
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
-
     }
 }

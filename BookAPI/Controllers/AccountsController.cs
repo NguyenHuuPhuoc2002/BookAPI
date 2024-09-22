@@ -53,8 +53,6 @@ namespace BookAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> SignUp([FromForm] SignUpModel model)
         {
-            try
-            {
                 _logger.LogInformation("Yêu cầu đăng kí từ user có email {email}", model.Email);
                 if (ModelState.IsValid)
                 {
@@ -72,8 +70,6 @@ namespace BookAPI.Controllers
                         model.Hinh = "";
                     }
                     var result = await _account.SignUpAsync(model);
-                    if (result.Succeeded)
-                    {
                         _logger.LogInformation("Yêu cầu đăng kí từ user có email {email} thành công", model.Email);
                         return Ok(new ApiResponse
                         {
@@ -82,19 +78,6 @@ namespace BookAPI.Controllers
                             Data = model
                         });
                     }
-                }
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Lỗi"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Yêu cầu đăng kí tài khoản không thành công");
-                return StatusCode(500, ex.Message);
-            }
-        }
 
         [HttpPost("login")]
         public async Task<IActionResult> SignIn(SignInModel model)
@@ -112,12 +95,6 @@ namespace BookAPI.Controllers
                 _logger.LogInformation("Tạo token");
                 var token = await GenerateToken(user);
                 return Ok(token);
-            }
-            return BadRequest(new ApiResponse
-            {
-                Success = false,
-                Message = "Dữ liệu không hợp lệ."
-            });
 
         }
         private string GenerateRefreshToken()
@@ -332,7 +309,6 @@ namespace BookAPI.Controllers
         [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(string email)
         {
-            
             var mail = await _account.ForgetPassword(email);
             var request = new MailRequest();
             request.ToEmail = email;
@@ -357,39 +333,14 @@ namespace BookAPI.Controllers
                     _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
                     var user = await _account.FindByEmailAsync(maKh);
                     var result = await _account.ChangePasswordAsync(user, model);
-                    if (result)
-                    {
                         _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
                         return NoContent();
                     }
-                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} không thành công", maKh);
-                }
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Lỗi"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Yêu cầu đổi mật khẩu từ {email} không thành công", maKh);
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-
-        }
 
         [HttpPost("reset-password-token")]
         public async Task<IActionResult> ResetPasswordToken([FromBody] ResetPasswordTokenModel model)
         {           
             var user = await _account.FindByEmailAsync(model.Email);
-            if (user == null)
-            {
-                return StatusCode(StatusCodes.Status404NotFound, new ApiResponse
-                {
-                    Success = false,
-                    Message = "User không tồn tại"
-                });
-            }
             var token = await _account.GeneratePasswordResetTokenAsync(user);
             var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
             return Ok(new { encodedToken = encodedToken });
@@ -400,16 +351,7 @@ namespace BookAPI.Controllers
         {
             var decodedBytes = WebEncoders.Base64UrlDecode(model.Token); 
             var decodedToken = Encoding.UTF8.GetString(decodedBytes);
-
             var user = await _account.FindByEmailAsync(model.Email);
-            if (user == null)
-            {
-                return StatusCode(StatusCodes.Status404NotFound, new ApiResponse
-                {
-                    Success = false,
-                    Message = "User không tồn tại"
-                });
-            }
             if (string.Compare(model.NewPassword, model.ConfirmPassword) != 0)
             {
                 return StatusCode(StatusCodes.Status400BadRequest, new ApiResponse
@@ -426,16 +368,7 @@ namespace BookAPI.Controllers
                     Message = "Token không hợp lệ"
                 });
             }
-
             var result = await _account.ResetPasswordAsync(user, decodedToken, model.NewPassword);
-            if (!result)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
-                {
-                    Success = false,
-                    Message = "Xảy ra lỗi khi reset password"
-                });
-            }
             return Ok(new ApiResponse
             {
                 Success = true,

@@ -135,11 +135,8 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> GetCart()
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            try
-            {
                 var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
                 var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
-
                 _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
                 return Ok(new ApiResponse
                 {
@@ -149,41 +146,16 @@ namespace BookAPI.Controllers
 
                 });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Đã xảy ra lỗi khi lấy giỏ hàng");
-
-                // Trả về mã trạng thái 500 cùng với thông báo lỗi từ ngoại lệ
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
 
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> AddBook(string id)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(id))
-            {
-                _logger.LogWarning("Đầu vào không hợp lệ");
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Đầu vào không hợp lệ"
-                });
-            }
-
-            try
-            {
                 _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKh);
                 var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
                 _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
                 var book = await _sach.GetBookByIdAsync(id);
-                if (book == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách với mã {BookId}", id);
-                    return NotFound();
-                }
                 _logger.LogInformation("Nhận yêu cầu lấy sách trong giỏ hàng với mã {id} và giỏ hàng ID {gioHangId}", id, cart.GioHangId);
                 var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
                 if (cartItem == null)
@@ -211,12 +183,6 @@ namespace BookAPI.Controllers
                     return NoContent();
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Xảy ra lỗi khi thêm sách vào giỏ hàng");
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
 
         [HttpPost("checkout")]
         [Authorize]
@@ -323,137 +289,27 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> UpdateAmount(string id, int amount)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(id) || amount <= 0)
-            {
-                _logger.LogWarning("Đầu vào không hợp lệ");
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Đầu vào không hợp lệ"
-                });
-            }
-
-            try
-            {
                 _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKh, id, amount);
                 var cart = await _cart.GetCartByMaKhAsync(maKh);
-
-                if (cart == null)
-                {
-                    _logger.LogWarning("Không tìm thấy giỏ hàng cho khách hàng với mã KH {MaKH}", maKh);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Không tìm thấy giỏ hàng cho khách hàng."
-                    });
-                }
-
                 var book = await _sach.GetBookByIdAsync(id);
-
-                if (book == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách với mã {BookId}", id);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = $"Không tìm thấy sách với mã {id}."
-                    });
-                }
-
                 var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-                if (cartItem == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách trong giỏ hàng với GioHangId {GioHangId}", cart.GioHangId);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Sách không có trong giỏ hàng."
-                    });
-                }
-
-                // Cập nhật số lượng sách trong giỏ hàng
                 await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, amount);
                 _logger.LogInformation("Cập nhật số lượng sách thành công. Mã sách: {BookId}, Số lượng mới: {Amount}", id, amount);
                 return NoContent();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Xảy ra lỗi khi thực hiện cập nhật số lượng sách. Mã sách: {BookId}", id);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
-                {
-                    Success = false,
-                    Message = "Đã xảy ra lỗi khi thực hiện cập nhật số lượng sách. Vui lòng thử lại sau."
-                });
-            }
-        }
 
         [HttpDelete("delete{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(string id)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(id))
-            {
-                _logger.LogWarning("Đầu vào không hợp lệ");
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Đầu vào không hợp lệ"
-                });
-            }
-            try
-            {
                 _logger.LogInformation("Xóa sách với mã {MaSach} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
-
                 var cart = await _cart.GetCartByMaKhAsync(maKh);
-                if (cart == null)
-                {
-                    _logger.LogWarning("Không tìm thấy giỏ hàng của khách hàng {CustomerId}", maKh);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Không tìm thấy giỏ hàng của khách hàng."
-                    });
-                }
-
-                var book = await _sach.GetBookByIdAsync(id);
-                if (book == null)
-                {
-                    _logger.LogWarning("Không tìm thấy sách với mã {BookId}", id);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = $"Không tìm thấy sách với mã {id}."
-                    });
-                }
-
                 var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-                if (cartItem != null)
-                {
                     await _cartItem.DeleteAsync(cartItem);
                     _logger.LogInformation("Xóa thành công sách với mã {BookId} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
                     return NoContent();
                 }
-                else
-                {
-                    _logger.LogWarning("Không tìm thấy sách trong giỏ hàng với mã {BookId}", id);
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = $"Không tìm thấy sách với mã {id} trong giỏ hàng."
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Xảy ra lỗi khi thực hiện xóa sách với mã {BookId}.", id);
-                return StatusCode(StatusCodes.Status500InternalServerError, new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
 
         [HttpDelete("clear")]
         [Authorize]
@@ -461,8 +317,6 @@ namespace BookAPI.Controllers
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id}", maKh);
-            try
-            {
                 var cart = await _cart.GetCartByMaKhAsync(maKh);
                 await _cartItem.ClearAllAsync(cart.GioHangId);
                 _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id} thành công", maKh);
@@ -472,12 +326,6 @@ namespace BookAPI.Controllers
                     Message = "Xóa tất cả sách thành công!",
                 });
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, "Xảy ra lỗi khi clear giỏ hàng");
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         private async Task<GioHang> CreateCartAsync(string maKH)
         {
             try

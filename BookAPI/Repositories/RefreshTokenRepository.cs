@@ -62,7 +62,6 @@ namespace BookAPI.Repositories
             {
                 _logger.LogInformation("Truy vấn lấy refreshToken");
                 var storedToken = await _context.RefreshTokens.FirstOrDefaultAsync(x => x.Token == refreshToken);
-
                 _logger.LogInformation("Thực hiện cập nhật token");
                 _context.Update(token);
                 await _context.SaveChangesAsync();

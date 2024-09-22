@@ -25,8 +25,6 @@ namespace BookAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(string? email)
         {
-            try
-            {
                 var result = await _userRole.GetAllAsync(email);
                 return Ok(new ApiResponse
                 {
@@ -35,35 +33,10 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
 
         [HttpPost]
         public async Task<IActionResult> AddUserRole(string email, string roleName)
         {
-            try
-            {
-                var findUser = await _account.FindByEmailAsync(email);
-                if (findUser == null)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "User không tồn tại"
-                    });
-                }
-                var findRole = await _role.GetRoleByNameAsync(roleName);
-                if (findRole == null)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Role không tồn tại"
-                    });
-                }
                 var result = await _userRole.AddRoleToUserAsync(email, roleName);
                 return Ok(new ApiResponse
                 {
@@ -72,34 +45,9 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
         [HttpDelete]
         public async Task<IActionResult> DeleteUserRole(string email, string roleName)
         {
-            try
-            {
-                var findUser = await _account.FindByEmailAsync(email);
-                if (findUser == null)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "User không tồn tại"
-                    });
-                }
-                var findRole = await _role.GetRoleByNameAsync(roleName);
-                if (findRole == null)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Role không tồn tại"
-                    });
-                }
                 var result = await _userRole.DeleteRoleUserAsync(email, roleName);
                 return Ok(new ApiResponse
                 {
@@ -108,10 +56,5 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex);
-            }
-        }
     }
 }

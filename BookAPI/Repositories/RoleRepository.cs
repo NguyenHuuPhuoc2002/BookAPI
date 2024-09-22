@@ -12,7 +12,6 @@ namespace BookAPI.Repositories
         {
             _roleManager = roleManager;
         }
-       
         public async Task<IEnumerable<IdentityRole>> GetRoleAllAsync()
         {
             try
@@ -63,7 +62,6 @@ namespace BookAPI.Repositories
                 throw ex;
             }
         }
-
         public async Task<bool> DeleteRoleAsync(string roleId)
         {
             try
@@ -77,7 +75,6 @@ namespace BookAPI.Repositories
                 throw ex;
             }
         }
-
         public async Task<bool> UpdateRoleAsync(IdentityRole role)
         {
             try

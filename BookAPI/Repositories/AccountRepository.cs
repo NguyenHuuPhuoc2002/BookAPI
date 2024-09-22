@@ -140,9 +140,7 @@ namespace BookAPI.Repositories
 
             if (result.Succeeded)
             {
-                
                 await _userManager.AddToRoleAsync(user, AppRole.CUSTOMER);
-
             }
 
             return result;

@@ -39,19 +39,12 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         [HttpGet("search")]
         public async Task<IActionResult> Search(string key, int? page, int? pageSize)
         {
             int _page = page ?? 1;
             int _pagSize = pageSize ?? 5;
             IEnumerable<ApplicationUser> result;
-            try
-            {
                 if (string.IsNullOrEmpty(key))
                 {
                     result = await _user.GetAllAsync(_page, _pagSize);
@@ -67,11 +60,6 @@ namespace BookAPI.Controllers
                     Data = result
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         [HttpPost]
         public async Task<IActionResult> AddUser(UserModel model)
         {
@@ -80,18 +68,7 @@ namespace BookAPI.Controllers
                 if (ModelState.IsValid)
                 {
                     var findUser = await _user.GetByEmailAsync(model.Email);
-                    if (findUser != null)
-                    {
-                        return BadRequest(new ApiResponse
-                        {
-                            Success = true,
-                            Message = "Email đã tồn tại"
-                        });
-                    }
-                   
                     var result = await _user.AddAsync(model);
-                    if (result)
-                    {
                         return Ok(new ApiResponse
                         {
                             Success = true,
@@ -99,19 +76,6 @@ namespace BookAPI.Controllers
                             Data = result
                         });
                     }
-                }
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Lỗi đầu vào"
-                });
-                
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }  
         [HttpPut]
         public async Task<IActionResult> UpdateUser(UserModel model)
         {
@@ -120,10 +84,6 @@ namespace BookAPI.Controllers
                 if (ModelState.IsValid)
                 {
                     var findUser = await _user.GetByEmailAsync(model.Email);
-                    if (findUser == null)
-                    {
-                        return NotFound();
-                    }
                     var user = new ApplicationUser
                     {
                         Email = model.Email,
@@ -136,40 +96,17 @@ namespace BookAPI.Controllers
                         DateOfBirth = model.BirthDate
                     };
                     var result = await _user.UpdateAsync(user);
-                    if (result)
-                    {
                         return Ok(new ApiResponse
                         {
                             Success = true,
                             Message = "Cập nhật user thành công",
                             Data = result
                         });
-                    }
-                }
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Lỗi đầu vào"
-                });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
         [HttpDelete]
         public async Task<IActionResult> DeleteUser(string email)
         {
-            try
-            {
-                var findUser = await _user.GetByEmailAsync(email);
-                if (findUser == null)
-                {
-                    return NotFound();
-                }
                 var result = await _user.DeleteAsync(email);
-                if (result)
-                {
                     return Ok(new ApiResponse
                     {
                         Success = true,
@@ -177,12 +114,5 @@ namespace BookAPI.Controllers
                         Data = result
                     });
                 }
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-            }
-        }
     }
 }
