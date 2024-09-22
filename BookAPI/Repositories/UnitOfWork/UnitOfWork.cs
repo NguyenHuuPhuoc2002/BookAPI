@@ -54,7 +54,7 @@ namespace BookAPI.Repositories.UnitOfWork
             _roleRepository = new RoleRepository(_roleManager);
             _sachRepository = new SachRepository(_context, mapper, null);
             _supplierRepository = new SupplierRepository(_context, null, mapper);
-            _userRoleRepository = new UserRoleRepository(_userManager, _roleManager, _context);
+            _userRoleRepository = new UserRoleRepository(_userManager, _roleManager, _context, null);
             _gioHangChiTietRepository = new GioHangChiTietRepository(_context, mapper, null);
             _hoaDonRepository =  new HoaDonRepository(_context, mapper, null);
         }

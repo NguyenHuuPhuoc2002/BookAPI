@@ -23,59 +23,62 @@ namespace BookAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRoleAll()
         {
-                var result = await _role.GetRoleAllAsync();
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Lấy roles thành công",
-                    Data = result
-                });
-            }
+            var result = await _role.GetRoleAllAsync();
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Lấy roles thành công",
+                Data = result
+            });
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRoleById(string id)
         {
-                var result = await _role.GetRoleByIdAsync(id);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Lấy role thành công",
-                    Data = result
-                });
-            }
+            var result = await _role.GetRoleByIdAsync(id);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Lấy role thành công",
+                Data = result
+            });
+        }
         [HttpPost]
         public async Task<IActionResult> AddRole(string roleName)
         {
-                var result = await _role.AddRoleAsync(roleName);
-                    return Ok(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Thêm role thành công",
-                        Data = result
-                    });
-                }
+            var result = await _role.AddRoleAsync(roleName);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Thêm role thành công",
+                Data = result
+            });
+        }
         [HttpDelete]
         public async Task<IActionResult> DeleteRole(string id)
         {
-                var result = await _role.DeleteRoleAsync(id);
-                    return Ok(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Xóa role thành công",
-                        Data = result
-                    });
-                }
+            var result = await _role.DeleteRoleAsync(id);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Xóa role thành công",
+                Data = result
+            });
+        }
         [HttpPut]
         public async Task<IActionResult> UpdateRole(IdentityRole role)
         {
-                var result = await _role.UpdateRoleAsync(role);
-                    return Ok(new ApiResponse
-                    {
-                        Success = true,
-                        Message = "Cập nhật role thành công",
-                        Data = result
-                    });
-                }
-                return StatusCode(StatusCodes.Status500InternalServerError);
+            if (!ModelState.IsValid)
+            {
+                throw new MissingFieldException("Nhập đầy đủ thông tin");
             }
+            var result = await _role.UpdateRoleAsync(role);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Cập nhật role thành công",
+                Data = result
+            });
+
+        }
     }
 }

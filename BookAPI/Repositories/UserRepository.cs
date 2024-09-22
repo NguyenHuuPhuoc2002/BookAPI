@@ -16,6 +16,7 @@ namespace BookAPI.Repositories
         }
         public async Task<IEnumerable<ApplicationUser>> GetAllAsync(int page, int pageSize)
         {
+            await Task.CompletedTask;
             try
             {
                 var data = _userManager.Users.AsQueryable();
@@ -24,8 +25,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-
-                throw ex;
+                throw;
             }
         }
 
@@ -33,12 +33,12 @@ namespace BookAPI.Repositories
         {
             try
             {
-                var result = await _userManager.FindByEmailAsync(email);
-                if (result == null)
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
                 {
-                    return null;
+                    throw new KeyNotFoundException("User không tồn tại");
                 }
-                return result;
+                return user;
             }
             catch (Exception ex)
             {
@@ -48,6 +48,7 @@ namespace BookAPI.Repositories
 
         public async Task<IEnumerable<ApplicationUser>> Search(string key, int page, int pageSize)
         {
+            await Task.CompletedTask;
             try
             {
                 var data = _userManager.Users.Where(p => p.FirstName.ToLower().Contains(key.ToLower().Trim())).AsQueryable();
@@ -57,13 +58,18 @@ namespace BookAPI.Repositories
             catch (Exception ex)
             {
 
-                throw ex;
+                throw;
             }
         }
         public async Task<bool> AddAsync(UserModel model)
         {
             try
             {
+                var findUser = await _userManager.FindByEmailAsync(model.Email);
+                if(findUser != null)
+                {
+                    throw new MissingFieldException("Email đã tồn tại");
+                }
                 var user = new ApplicationUser
                 {
                     UserName = model.Email,
@@ -85,7 +91,7 @@ namespace BookAPI.Repositories
             catch (Exception ex)
             {
 
-                throw ex;
+                throw;
             }
         }
 
@@ -94,13 +100,17 @@ namespace BookAPI.Repositories
             try
             {
                 var findEmail = await _userManager.FindByEmailAsync(email);
+                if (findEmail == null)
+                {
+                    throw new KeyNotFoundException("User không tồn tại");
+                }
                 var result = await _userManager.DeleteAsync(findEmail);
                 if (result.Succeeded) return true;
                 return false;
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw;
             }
         }
 
@@ -109,7 +119,10 @@ namespace BookAPI.Repositories
             try
             {
                 var findEmail = await _userManager.FindByEmailAsync(model.Email);
-
+                if (findEmail == null)
+                {
+                    throw new KeyNotFoundException("User không tồn tại");
+                }
                 findEmail.Email = model.Email;
                 findEmail.FirstName = model.FirstName;
                 findEmail.LastName = model.LastName;
@@ -128,7 +141,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw ;
             }
         }
     }

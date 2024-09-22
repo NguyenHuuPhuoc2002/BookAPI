@@ -30,7 +30,7 @@ namespace BookAPI.Controllers
         private readonly ISachService _sach;
         private readonly IMapper _mapper;
         private readonly IVnPayService _vnPayService;
-        
+
         private static CheckoutModel _model { get; set; }
         public CartsController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
                                 ILogger<CartsController> logger, ISachService sach, IMapper mapper)
@@ -125,7 +125,7 @@ namespace BookAPI.Controllers
                 // Rollback transaction nếu có lỗi xảy ra
                 await _cart.RollbackTransactionAsync();
                 _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.maKh);
-                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+                throw new AppException("Thanh toán không thành công!");
             }
 
             #endregion
@@ -135,54 +135,54 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> GetCart()
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-                var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
-                var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
-                _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Lấy thành công!",
-                    Data = cartItems
+            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
+            var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
+            _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Lấy thành công!",
+                Data = cartItems
 
-                });
-            }
+            });
+        }
 
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> AddBook(string id)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-                _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKh);
-                var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
-                _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
-                var book = await _sach.GetBookByIdAsync(id);
-                _logger.LogInformation("Nhận yêu cầu lấy sách trong giỏ hàng với mã {id} và giỏ hàng ID {gioHangId}", id, cart.GioHangId);
-                var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-                if (cartItem == null)
+            _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKh);
+            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
+            _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
+            var book = await _sach.GetBookByIdAsync(id);
+            _logger.LogInformation("Nhận yêu cầu lấy sách trong giỏ hàng với mã {id} và giỏ hàng ID {gioHangId}", id, cart.GioHangId);
+            var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
+            if (cartItem == null)
+            {
+                var result = new CartModel
                 {
-                    var result = new CartModel
-                    {
-                        Anh = book.Anh ?? "",
-                        TenSach = book.TenSach,
-                        DonGia = book.Gia ?? 0,
-                        SoLuong = 1,
-                        ThanhTien = book.Gia ?? 0,
-                        GiamGia = 0,
-                        GioHangId = cart.GioHangId,
-                        MaSach = book.MaSach
-                    };
+                    Anh = book.Anh ?? "",
+                    TenSach = book.TenSach,
+                    DonGia = book.Gia ?? 0,
+                    SoLuong = 1,
+                    ThanhTien = book.Gia ?? 0,
+                    GiamGia = 0,
+                    GioHangId = cart.GioHangId,
+                    MaSach = book.MaSach
+                };
 
-                    await _cartItem.AddAsync(result);
-                    _logger.LogInformation("Thêm sách với mã {BookId} vào giỏ hàng cho khách hàng với mã {CustomerId} thành công", result.MaSach, maKh);
-                    return Ok(result);
-                }
-                else
-                {
-                    await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, 1);
-                    _logger.LogInformation("Cập nhật số lượng sách cho khách hàng với mã {CustomerId} thành công", maKh);
-                    return NoContent();
-                }
+                await _cartItem.AddAsync(result);
+                _logger.LogInformation("Thêm sách với mã {BookId} vào giỏ hàng cho khách hàng với mã {CustomerId} thành công", result.MaSach, maKh);
+                return Ok(result);
             }
+            else
+            {
+                await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, 1);
+                _logger.LogInformation("Cập nhật số lượng sách cho khách hàng với mã {CustomerId} thành công", maKh);
+                return NoContent();
+            }
+        }
 
         [HttpPost("checkout")]
         [Authorize]
@@ -276,7 +276,7 @@ namespace BookAPI.Controllers
                 {
                     await _cart.RollbackTransactionAsync();
                     _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.maKh);
-                    return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+                    throw new AppException("Thanh toán không thành công!");
                 }
                 #endregion
             }
@@ -289,27 +289,27 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> UpdateAmount(string id, int amount)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-                _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKh, id, amount);
-                var cart = await _cart.GetCartByMaKhAsync(maKh);
-                var book = await _sach.GetBookByIdAsync(id);
-                var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-                await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, amount);
-                _logger.LogInformation("Cập nhật số lượng sách thành công. Mã sách: {BookId}, Số lượng mới: {Amount}", id, amount);
-                return NoContent();
-            }
+            _logger.LogInformation("Yêu cầu cập nhật số lượng sách. Mã KH: {MaKH}, Mã sách: {MaSach}, Số lượng: {Amount}", maKh, id, amount);
+            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            var book = await _sach.GetBookByIdAsync(id);
+            var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
+            await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, amount);
+            _logger.LogInformation("Cập nhật số lượng sách thành công. Mã sách: {BookId}, Số lượng mới: {Amount}", id, amount);
+            return NoContent();
+        }
 
         [HttpDelete("delete{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(string id)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-                _logger.LogInformation("Xóa sách với mã {MaSach} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
-                var cart = await _cart.GetCartByMaKhAsync(maKh);
-                var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-                    await _cartItem.DeleteAsync(cartItem);
-                    _logger.LogInformation("Xóa thành công sách với mã {BookId} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
-                    return NoContent();
-                }
+            _logger.LogInformation("Xóa sách với mã {MaSach} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
+            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
+            await _cartItem.DeleteAsync(cartItem);
+            _logger.LogInformation("Xóa thành công sách với mã {BookId} từ giỏ hàng của khách hàng {CustomerId}", id, maKh);
+            return NoContent();
+        }
 
         [HttpDelete("clear")]
         [Authorize]
@@ -317,15 +317,15 @@ namespace BookAPI.Controllers
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
             _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id}", maKh);
-                var cart = await _cart.GetCartByMaKhAsync(maKh);
-                await _cartItem.ClearAllAsync(cart.GioHangId);
-                _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id} thành công", maKh);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Xóa tất cả sách thành công!",
-                });
-            }
+            var cart = await _cart.GetCartByMaKhAsync(maKh);
+            await _cartItem.ClearAllAsync(cart.GioHangId);
+            _logger.LogInformation("Yêu cầu xóa tất cả sách trong giỏ với mã KH {id} thành công", maKh);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Xóa tất cả sách thành công!",
+            });
+        }
         private async Task<GioHang> CreateCartAsync(string maKH)
         {
             try

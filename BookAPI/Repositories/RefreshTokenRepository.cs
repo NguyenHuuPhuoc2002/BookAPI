@@ -41,7 +41,7 @@ namespace BookAPI.Repositories
                 if(storedToken == null)
                 {
                     _logger.LogWarning("Không tìm thấy refreshToken");
-                    return null;
+                    throw new KeyNotFoundException("Không tìm thấy refreshToken");
                 }
                 else
                 {

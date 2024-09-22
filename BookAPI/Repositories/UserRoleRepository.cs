@@ -12,12 +12,15 @@ namespace BookAPI.Repositories
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly DataContext _context;
+        private readonly ILogger<UserRoleRepository> _logger;
 
-        public UserRoleRepository(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, DataContext context)
+        public UserRoleRepository(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager,
+                                    DataContext context, ILogger<UserRoleRepository> logger)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
+            _logger = logger;
         }
         public async Task<bool> AddRoleToUserAsync(string email, string roleName)
         {
@@ -26,11 +29,13 @@ namespace BookAPI.Repositories
                 var user = await _userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
-                    return false;
+                    _logger.LogWarning("Không tìm thấy user {email}", email);
+                    throw new KeyNotFoundException("User không tồn tại");
                 }
                 if (!await _roleManager.RoleExistsAsync(roleName))
                 {
-                    return false;
+                    _logger.LogWarning("Không tìm thấy role {role}", roleName);
+                    throw new KeyNotFoundException("Role không tồn tại");
                 }
                 var result = await _userManager.AddToRoleAsync(user, roleName);
                 if (result.Succeeded)
@@ -41,6 +46,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Xảy ra lỗi");
                 throw;
             }
         }
@@ -50,6 +56,11 @@ namespace BookAPI.Repositories
             try
             {
                 var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    _logger.LogWarning("Không tìm thấy user {email}", email);
+                    throw new KeyNotFoundException("User không tồn tại");
+                }
                 var isInRole = await _userManager.IsInRoleAsync(user, roleName);
                 var result = await _userManager.RemoveFromRoleAsync(user, roleName);
                 if (result.Succeeded)
@@ -60,6 +71,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Xảy ra lỗi");
                 throw;
             }
         }
@@ -82,6 +94,7 @@ namespace BookAPI.Repositories
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Xảy ra lỗi");
                 throw;
             }
         }

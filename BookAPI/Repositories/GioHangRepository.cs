@@ -85,6 +85,7 @@ namespace BookAPI.Repositories
                 if (cart == null)
                 {
                     _logger.LogWarning("Không tìm thấy giỏ hàng có mã KH {maKh}", maKh);
+                    throw new KeyNotFoundException($"Không tìm thấy giỏ hàng của khách hàng {maKh}");
                 }
 
                 _logger.LogInformation("Trả về một đối tượng giỏ hàng thành công");

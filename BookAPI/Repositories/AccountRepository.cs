@@ -3,6 +3,7 @@ using BookAPI.Data;
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories.Interfaces;
+using Common.Exceptions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -41,7 +42,7 @@ namespace BookAPI.Repositories
                     _logger.LogInformation("Thực hiện thay đổi mật khẩu thành công");
                     return true;
                 }
-                return false;
+                throw new AppException("Đổi mật khẩu không thành công");
             }
             catch (Exception ex)
             {
@@ -58,6 +59,7 @@ namespace BookAPI.Repositories
                 if (user == null)
                 {
                     _logger.LogWarning("Không tìm thấy user {email}", email);
+                    throw new KeyNotFoundException("User không tồn tại");
                 }
                 return user;
             }
@@ -76,12 +78,13 @@ namespace BookAPI.Repositories
                 if(user == null)
                 {
                     _logger.LogWarning("Không tìm thấy user {email}", id);
+                    throw new KeyNotFoundException("Không tìm thấy user");
                 }
                 return user;
             }
             catch (Exception ex)
             {
-                _logger.LogError("Xảy ra lỗi khi tìm kiếm user");
+                _logger.LogError(ex, "Xảy ra lỗi khi tìm kiếm user");
                 throw;
             }
         }
@@ -110,14 +113,14 @@ namespace BookAPI.Repositories
             if (user == null || !passWordValid)
             {
                 _logger.LogInformation("User không tồn tại");
-                return null;
+                throw new KeyNotFoundException("User không tồn tại");
             }
 
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, false, false);
             if (!result.Succeeded)
             {
-                _logger.LogInformation("Thông tin đăng nhập chính xác");
-                return null;
+                _logger.LogInformation("Thông tin đăng nhập không chính xác");
+                throw new KeyNotFoundException("Thông tin đăng nhập không chính xác");
             }
 
             return user;
@@ -139,7 +142,7 @@ namespace BookAPI.Repositories
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (result.Succeeded)
-            {
+            {               
                 await _userManager.AddToRoleAsync(user, AppRole.CUSTOMER);
             }
 
@@ -187,13 +190,13 @@ namespace BookAPI.Repositories
                 if (user == null)
                 {
                     _logger.LogWarning("Không tìm thấy user: {email}", model.UserName);
-                    return false;
+                    throw new KeyNotFoundException($"Không tìm thấy user: {model.UserName}");
                 }
                 var resetPassword = await _userManager.ResetPasswordAsync(user, token, newPassword);
                 if (!resetPassword.Succeeded)
                 {
                     _logger.LogError("Reset Password cho user: {email} không thành công", model.UserName);
-                    return false;
+                    throw new AppException("Reset Password không thành công");
                 }
                 _logger.LogInformation("Reset Password cho user: {email} thành công", model.UserName);
                 return true;

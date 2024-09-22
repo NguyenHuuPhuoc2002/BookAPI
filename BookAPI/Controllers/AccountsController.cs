@@ -4,6 +4,7 @@ using BookAPI.Models;
 using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
+using Common.Exceptions;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Authorization;
@@ -53,48 +54,52 @@ namespace BookAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> SignUp([FromForm] SignUpModel model)
         {
-                _logger.LogInformation("Yêu cầu đăng kí từ user có email {email}", model.Email);
-                if (ModelState.IsValid)
+            _logger.LogInformation("Yêu cầu đăng kí từ user có email {email}", model.Email);
+            if (!ModelState.IsValid)
+            {
+                throw new MissingFieldException("Nhập đầy đủ thông tin bắt buộc");
+            }
+            if (model.Image != null)
+            {
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "KhachHang", model.Image.FileName);
+                using (var stream = System.IO.File.Create(path))
                 {
-                    if (model.Image != null)
-                    {
-                        var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Images", "KhachHang", model.Image.FileName);
-                        using (var stream = System.IO.File.Create(path))
-                        {
-                            await model.Image.CopyToAsync(stream);
-                        }
-                        model.Hinh = "/images/KhachHang/" + model.Image.FileName;
-                    }
-                    else
-                    {
-                        model.Hinh = "";
-                    }
-                    var result = await _account.SignUpAsync(model);
-                        _logger.LogInformation("Yêu cầu đăng kí từ user có email {email} thành công", model.Email);
-                        return Ok(new ApiResponse
-                        {
-                            Success = true,
-                            Message = "Đăng kí thành công",
-                            Data = model
-                        });
-                    }
+                    await model.Image.CopyToAsync(stream);
+                }
+                model.Hinh = "/images/KhachHang/" + model.Image.FileName;
+            }
+            else
+            {
+                model.Hinh = "";
+            }
+            var result = await _account.SignUpAsync(model);
+            _logger.LogInformation("Yêu cầu đăng kí từ user có email {email} thành công", model.Email);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Đăng kí thành công",
+                Data = model
+            });
+        }
 
         [HttpPost("login")]
         public async Task<IActionResult> SignIn(SignInModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email} thành công", model.Email);
-                var user = await _account.SignInAsync(model);
-                if (user == null)
-                {
-                    _logger.LogWarning("Không tồn tại user có email {email}", model.Email);
-                    return Unauthorized();
-                }
-                _logger.LogInformation("Đăng nhập thành công");
-                _logger.LogInformation("Tạo token");
-                var token = await GenerateToken(user);
-                return Ok(token);
+                throw new MissingFieldException("Nhập đầy đủ thông tin bắt buộc");
+            }
+            _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email} thành công", model.Email);
+            var user = await _account.SignInAsync(model);
+            if (user == null)
+            {
+                _logger.LogWarning("Không tồn tại user có email {email}", model.Email);
+                return Unauthorized();
+            }
+            _logger.LogInformation("Đăng nhập thành công");
+            _logger.LogInformation("Tạo token");
+            var token = await GenerateToken(user);
+            return Ok(token);
 
         }
         private string GenerateRefreshToken()
@@ -291,12 +296,8 @@ namespace BookAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError("Xảy ra lỗi khi tạo refresh token");
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = "Something went wrong"
-                });
+                _logger.LogError(ex, "Xảy ra lỗi khi tạo refresh token");
+                throw;
             }
 
         }
@@ -326,20 +327,20 @@ namespace BookAPI.Controllers
         public async Task<IActionResult> ChangePassword(ChangePasswordModel model)
         {
             var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            try
+            if (!ModelState.IsValid)
             {
-                if (ModelState.IsValid)
-                {
-                    _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
-                    var user = await _account.FindByEmailAsync(maKh);
-                    var result = await _account.ChangePasswordAsync(user, model);
-                        _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
-                        return NoContent();
-                    }
+                throw new MissingFieldException("Nhập thông tin!");
+            }
+            _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email}", maKh);
+            var user = await _account.FindByEmailAsync(maKh);
+            var result = await _account.ChangePasswordAsync(user, model);
+            _logger.LogInformation("Yêu cầu thay đổi mật khẩu từ {email} thành công", maKh);
+            return NoContent();
+        }
 
         [HttpPost("reset-password-token")]
         public async Task<IActionResult> ResetPasswordToken([FromBody] ResetPasswordTokenModel model)
-        {           
+        {
             var user = await _account.FindByEmailAsync(model.Email);
             var token = await _account.GeneratePasswordResetTokenAsync(user);
             var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
@@ -349,26 +350,18 @@ namespace BookAPI.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordModel model)
         {
-            var decodedBytes = WebEncoders.Base64UrlDecode(model.Token); 
+            var decodedBytes = WebEncoders.Base64UrlDecode(model.Token);
             var decodedToken = Encoding.UTF8.GetString(decodedBytes);
             var user = await _account.FindByEmailAsync(model.Email);
             if (string.Compare(model.NewPassword, model.ConfirmPassword) != 0)
             {
-                return StatusCode(StatusCodes.Status400BadRequest, new ApiResponse
-                {
-                    Success = false,
-                    Message = "NewPassword và ConfirmPassword không trùng khớp"
-                });
+                throw new MissingFieldException("NewPassword và ConfirmPassword không trùng khớp");
             }
             if (string.IsNullOrEmpty(model.Token))
             {
-                return StatusCode(StatusCodes.Status400BadRequest, new ApiResponse
-                {
-                    Success = false,
-                    Message = "Token không hợp lệ"
-                });
+                throw new AppException("Token không hợp lệ");
             }
-            var result = await _account.ResetPasswordAsync(user, decodedToken, model.NewPassword);
+            var result = await _account.ResetPasswordAsync(user, decodedToken, model.NewPassword);            
             return Ok(new ApiResponse
             {
                 Success = true,

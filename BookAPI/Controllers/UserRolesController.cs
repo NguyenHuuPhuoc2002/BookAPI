@@ -25,36 +25,36 @@ namespace BookAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(string? email)
         {
-                var result = await _userRole.GetAllAsync(email);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Lấy thành công",
-                    Data = result
-                });
-            }
+            var result = await _userRole.GetAllAsync(email);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Lấy thành công",
+                Data = result
+            });
+        }
 
         [HttpPost]
         public async Task<IActionResult> AddUserRole(string email, string roleName)
         {
-                var result = await _userRole.AddRoleToUserAsync(email, roleName);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Thêm thành công",
-                    Data = result
-                });
-            }
+            var result = await _userRole.AddRoleToUserAsync(email, roleName);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Thêm thành công",
+                Data = result
+            });
+        }
         [HttpDelete]
         public async Task<IActionResult> DeleteUserRole(string email, string roleName)
         {
-                var result = await _userRole.DeleteRoleUserAsync(email, roleName);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Xóa thành công",
-                    Data = result
-                });
-            }
+            var result = await _userRole.DeleteRoleUserAsync(email, roleName);
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Xóa thành công",
+                Data = result
+            });
+        }
     }
 }

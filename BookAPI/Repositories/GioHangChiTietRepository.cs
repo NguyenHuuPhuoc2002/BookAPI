@@ -66,6 +66,7 @@ namespace BookAPI.Repositories
                     if (book == null)
                     {
                         _logger.LogWarning("Không tìm thấy sách trong giỏ với mã sách {id}", cartItem.MaSach);
+                        throw new KeyNotFoundException($"Không tìm thấy sách trong giỏ với mã sách {cartItem.MaSach}");
                     }
                     else
                     {
