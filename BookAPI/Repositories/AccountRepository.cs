@@ -202,5 +202,18 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
+        public async Task<bool> SignOutAsync()
+        {
+            try
+            {
+                await _signInManager.SignOutAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, "Xảy ra lỗi khi thực hiện Đăng xuất");
+                throw;
+            }
+        }
     }
 }

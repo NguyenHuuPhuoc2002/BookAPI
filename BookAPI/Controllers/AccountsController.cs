@@ -1,4 +1,5 @@
-﻿using BookAPI.Data;
+﻿using BookAPI.Common;
+using BookAPI.Data;
 using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories;
@@ -17,6 +18,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using MimeKit;
 using MimeKit.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -35,12 +38,13 @@ namespace BookAPI.Controllers
         private readonly AppSetting _appSettings;
         private readonly ILogger<AccountsController> _logger;
         private readonly IMailService _email;
+        private readonly IResponseCacheService _responseCacheService;
         private readonly UserManager<ApplicationUser> _userManager;
         private SecurityToken validatedToken;
 
         public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
                                    IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger,
-                                   IMailService mail, UserManager<ApplicationUser> userManager)
+                                   IMailService mail, UserManager<ApplicationUser> userManager, IResponseCacheService responseCacheService)
         {
             _account = account;
             _configuration = configuration;
@@ -48,7 +52,57 @@ namespace BookAPI.Controllers
             _appSettings = optionsMonitor.CurrentValue;
             _logger = logger;
             _email = mail;
+            _responseCacheService = responseCacheService;
             _userManager = userManager;
+        }
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> SignOutAsync([FromBody] LogOutRequestModel requestToken)
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;          
+            if (requestToken.Token == TokenGlobalVariable.Token)
+            {
+                var dataRequest = new LogOutRequestModel
+                {
+                    Token = requestToken.Token,
+                };
+
+                var cacheDataString = JsonConvert.SerializeObject(dataRequest);
+                // Lưu token làm key, thời gian sống của cache bằng với thời gian sống của token
+                await _responseCacheService.SetCacheReponseAsync(email, cacheDataString, TimeSpan.FromMinutes(20));
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Đăng xuất thành công"
+                });
+            }
+
+            throw new Exception();
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> SignIn(SignInModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                throw new MissingFieldException("Nhập đầy đủ thông tin bắt buộc");
+            }
+
+            _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email}", model.Email);
+            var user = await _account.SignInAsync(model);
+            if (user == null)
+            {
+                _logger.LogWarning("Không tồn tại user có email {email}", model.Email);
+                return Unauthorized();
+            }
+
+            var token = await GenerateToken(user);
+            var cachedToken = await _responseCacheService.GetCacheResponseAsync(token.AccessToken);
+            GlobalVariables.maKh = user.UserName;
+            TokenGlobalVariable.Token = token.AccessToken;
+            _logger.LogInformation("Đăng nhập thành công");
+            return Ok(token);
         }
 
         [HttpPost("register")]
@@ -266,6 +320,7 @@ namespace BookAPI.Controllers
                 var user = await _account.FindByIdAsync(storedToken.UserId);
                 var token = await GenerateToken(user);
                 _logger.LogInformation("Tạo refresh token thành công");
+                TokenGlobalVariable.Token = token.AccessToken;
                 return Ok(new ApiResponse
                 {
                     Success = true,
@@ -340,7 +395,7 @@ namespace BookAPI.Controllers
             {
                 throw new AppException("Token không hợp lệ");
             }
-            var result = await _account.ResetPasswordAsync(user, decodedToken, model.NewPassword);            
+            var result = await _account.ResetPasswordAsync(user, decodedToken, model.NewPassword);
             return Ok(new ApiResponse
             {
                 Success = true,

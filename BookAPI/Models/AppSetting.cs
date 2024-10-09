@@ -35,4 +35,8 @@ namespace BookAPI.Models
     {
         public static string maKh { get; set; }
     }
+    public static class TokenGlobalVariable
+    {
+        public static string Token { get; set; }
+    }
 }

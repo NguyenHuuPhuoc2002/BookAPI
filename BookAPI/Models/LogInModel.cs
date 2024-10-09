@@ -12,4 +12,9 @@ namespace BookAPI.Models
         [DataType(DataType.Password)]
         public string Password { get; set; }
     }
+
+    public class LogOutRequestModel
+    {
+        public string Token { get; set; }
+    }
 }

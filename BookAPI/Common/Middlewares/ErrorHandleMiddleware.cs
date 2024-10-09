@@ -30,9 +30,10 @@ namespace Common
                 {
                     AppException => (int)HttpStatusCode.BadRequest,// custom application error
                     MissingFieldException => (int)HttpStatusCode.BadRequest,// missing field error
-                    PasswordException => (int)HttpStatusCode.BadRequest,// missing field error
+                    PasswordException => (int)HttpStatusCode.BadRequest,// BadRequest field error
                     KeyNotFoundException => (int)HttpStatusCode.NotFound,// not found error
-                    DuplicateException => (int)HttpStatusCode.Conflict,// duplicatte error
+                    DuplicateException => (int)HttpStatusCode.Conflict,// Conflict error
+                    AuthorizeException => (int)HttpStatusCode.Unauthorized,// Unauthorized error
                     _ => (int)HttpStatusCode.InternalServerError,// unhandled error
                 };
                 var result = JsonSerializer.Serialize(new { message = error?.Message, statusCode = response.StatusCode});

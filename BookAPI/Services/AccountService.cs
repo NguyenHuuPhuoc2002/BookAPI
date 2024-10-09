@@ -55,6 +55,11 @@ namespace BookAPI.Services
             return await _account.SignInAsync(model);
         }
 
+        public async Task<bool> SignOutAsync()
+        {
+           return await _account.SignOutAsync();
+        }
+
         public async Task<IdentityResult> SignUpAsync(SignUpModel model)
         {
             return await _account.SignUpAsync(model);

@@ -8,6 +8,7 @@ namespace BookAPI.Services.Interfaces
     {
         public Task<IdentityResult> SignUpAsync(SignUpModel model);
         public Task<IdentityUser> SignInAsync(SignInModel model);
+        public Task<bool> SignOutAsync();
         public Task<ApplicationUser> FindByEmailAsync(string email);
         public Task<bool> ChangePasswordAsync(ApplicationUser user, ChangePasswordModel model);
         public Task<ApplicationUser> FindByIdAsync(string id);

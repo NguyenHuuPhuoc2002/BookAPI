@@ -1,4 +1,5 @@
-﻿using BookAPI.Data;
+﻿
+using BookAPI.Data;
 using BookAPI.Database;
 using BookAPI.Helper;
 using BookAPI.Models;
@@ -23,6 +24,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using Service;
 using Service.Interface;
+using StackExchange.Redis;
 using System.Text;
 
 /*namespace BookAPI
@@ -70,6 +72,27 @@ builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 10240; // Giới hạn tổng kích thước bộ nhớ cache (10 MB)
 });
+
+#region redis custom
+var redisConfiguration = new RedisConfiguration();
+builder.Configuration.GetSection("RedisConfiguration").Bind(redisConfiguration);
+if (string.IsNullOrEmpty(redisConfiguration.ConnectionString) || !redisConfiguration.Enabled)
+{
+    return;
+}
+builder.Services.AddSingleton(redisConfiguration);
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    return ConnectionMultiplexer.Connect(redisConfiguration.ConnectionString);
+});
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConfiguration.ConnectionString;
+});
+builder.Services.AddSingleton<IResponseCacheService, ResponseCacheService>();
+builder.Services.Configure<RedisConfiguration>(builder.Configuration.GetSection("RedisConfiguration"));
+
+#endregion
 
 #region Identity
 //Identity
@@ -171,6 +194,7 @@ builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<CacheService>();
+builder.Services.AddScoped<IResponseCacheService, ResponseCacheService>();
 #endregion
 
 // Đăng ký AutoMapper
@@ -207,8 +231,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 app.UseCors("AllowAllOrigins"); // Apply CORS policy
-app.UseMiddleware<ErrorHandleMiddleware>();
-app.UseHttpsRedirection();
+app.UseHttpsRedirection(); // Chuyển hướng HTTP sang HTTPS
+app.UseMiddleware<TokenValidationMiddleware>(); // Kiểm tra token
+app.UseMiddleware<ErrorHandleMiddleware>(); // Xử lý lỗi
+app.UseAuthentication(); // Xác thực người dùng
+app.UseAuthorization(); // Ủy quyền người dùng
+app.MapControllers(); // Ánh xạ các controller
 
 
 var scope = app.Services.CreateScope();
