@@ -210,11 +210,6 @@ app.UseCors("AllowAllOrigins"); // Apply CORS policy
 app.UseMiddleware<ErrorHandleMiddleware>();
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-
-app.MapControllers();
 
 var scope = app.Services.CreateScope();
 var context = scope.ServiceProvider.GetRequiredService<DataContext>();

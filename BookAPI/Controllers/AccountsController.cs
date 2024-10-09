@@ -81,27 +81,6 @@ namespace BookAPI.Controllers
                 Data = model
             });
         }
-
-        [HttpPost("login")]
-        public async Task<IActionResult> SignIn(SignInModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                throw new MissingFieldException("Nhập đầy đủ thông tin bắt buộc");
-            }
-            _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email} thành công", model.Email);
-            var user = await _account.SignInAsync(model);
-            if (user == null)
-            {
-                _logger.LogWarning("Không tồn tại user có email {email}", model.Email);
-                return Unauthorized();
-            }
-            _logger.LogInformation("Đăng nhập thành công");
-            _logger.LogInformation("Tạo token");
-            var token = await GenerateToken(user);
-            return Ok(token);
-
-        }
         private string GenerateRefreshToken()
         {
             var random = new byte[32];

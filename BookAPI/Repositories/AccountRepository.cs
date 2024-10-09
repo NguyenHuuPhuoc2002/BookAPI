@@ -50,7 +50,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public Task<ApplicationUser> FindByEmailAsync(string email)
         {
             try
@@ -69,7 +68,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<ApplicationUser> FindByIdAsync(string id)
         {
             try
@@ -88,7 +86,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<IEnumerable<string>> GetRolesAsync(ApplicationUser model)
         {
             try
@@ -103,7 +100,6 @@ namespace BookAPI.Repositories
                 throw;
             }
         }
-
         public async Task<IdentityUser> SignInAsync(SignInModel model)
         {
             _logger.LogInformation("Truy vấn tìm user");
@@ -125,7 +121,6 @@ namespace BookAPI.Repositories
 
             return user;
         }
-
         public async Task<IdentityResult> SignUpAsync(SignUpModel model)
         {
             var user = new ApplicationUser
