@@ -62,10 +62,6 @@ namespace BookAPI.Controllers
             var email = User.FindFirst(ClaimTypes.Email)?.Value;          
             if (requestToken.Token == TokenGlobalVariable.Token)
             {
-                var dataRequest = new LogOutRequestModel
-                {
-                    Token = requestToken.Token,
-                };
 
                 var cacheDataString = JsonConvert.SerializeObject(dataRequest);
                 // Lưu token làm key, thời gian sống của cache bằng với thời gian sống của token
