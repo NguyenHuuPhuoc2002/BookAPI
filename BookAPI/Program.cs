@@ -120,6 +120,14 @@ builder.Services.AddAuthentication(options =>
 #endregion
 
 builder.Host.UseSerilog();
+//builder.Host.UseSerilog((context, services, configuration) => configuration
+//    .ReadFrom.Configuration(context.Configuration)
+//    .Enrich.FromLogContext());
+//// Xóa các provider logging mặc định và thêm Serilog
+//builder.Logging.ClearProviders();
+//builder.Logging.AddSerilog();
+
+
 // Add services to the container.
 
 builder.Services.AddControllers();

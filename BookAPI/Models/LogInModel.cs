@@ -15,6 +15,7 @@ namespace BookAPI.Models
 
     public class LogOutRequestModel
     {
-        public string Token { get; set; }
+        public string AccessToken { get; set; }
+        public string RefreshToken { get; set; }
     }
 }

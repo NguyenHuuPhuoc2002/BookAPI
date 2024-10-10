@@ -57,16 +57,29 @@ namespace BookAPI.Controllers
         }
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> SignOutAsync([FromBody] LogOutRequestModel requestToken)
+        public async Task<IActionResult> SignOut([FromBody] LogOutRequestModel requestToken)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;          
-            if (requestToken.Token == TokenGlobalVariable.Token)
+            if (requestToken.AccessToken == TokenGlobalVariable.Token)
             {
+                var dataRequest = new LogOutRequestModel
+                {
+                    AccessToken = requestToken.AccessToken,
+                };
 
                 var cacheDataString = JsonConvert.SerializeObject(dataRequest);
-                // Lưu token làm key, thời gian sống của cache bằng với thời gian sống của token
-                await _responseCacheService.SetCacheReponseAsync(email, cacheDataString, TimeSpan.FromMinutes(20));
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var token = tokenHandler.ReadToken(requestToken.AccessToken) as JwtSecurityToken;
+                var expires = token.ValidTo; 
+                var remainingTime = expires - DateTime.UtcNow;
 
+                await _responseCacheService.SetCacheReponseAsync(email, cacheDataString, remainingTime);
+                var storedToken = await _refreshToken.GetTokenAsync(requestToken.RefreshToken);
+                if (storedToken != null)
+                {
+                    storedToken.IsRevoked = true;
+                    await _refreshToken.UpdateAsync(storedToken, requestToken.RefreshToken);
+                }
                 return Ok(new ApiResponse
                 {
                     Success = true,
