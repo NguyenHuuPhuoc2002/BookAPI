@@ -32,6 +32,7 @@ namespace BookAPI.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {
+        private readonly IGioHangService _cart;
         private readonly IAccountService _account;
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenService _refreshToken;
@@ -43,9 +44,10 @@ namespace BookAPI.Controllers
         private SecurityToken validatedToken;
 
         public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
-                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger,
+                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger, IGioHangService cart,
                                    IMailService mail, UserManager<ApplicationUser> userManager, IResponseCacheService responseCacheService)
         {
+            _cart = cart;
             _account = account;
             _configuration = configuration;
             _refreshToken = refreshToken;
@@ -137,6 +139,7 @@ namespace BookAPI.Controllers
             }
             var result = await _account.SignUpAsync(model);
             _logger.LogInformation("Yêu cầu đăng kí từ user có email {email} thành công", model.Email);
+            // await CreateCartAsync(model.Email);
             return Ok(new ApiResponse
             {
                 Success = true,
@@ -424,5 +427,20 @@ namespace BookAPI.Controllers
                 Data = model
             });
         }
+       /* private async Task<GioHang> CreateCartAsync(string maKH)
+        {
+            try
+            {
+                var createCart = new GioHang { MaKH = maKH };
+                await _cart.AddAsync(createCart);
+                _logger.LogInformation("Tạo giỏ hàng cho khách hàng có mã {CustomerId}", maKH);
+                return createCart;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Xảy ra lỗi khi thêm giỏ hàng");
+                throw;
+            }
+        }*/
     }
 }
