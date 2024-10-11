@@ -15,8 +15,8 @@ public class TokenValidationMiddleware
 
     public async Task Invoke(HttpContext context)
     {
-        var email = GlobalVariables.maKh;
-
+        var email = GlobalVariables.email;
+        
         var endpoint = context.GetEndpoint();
         var hasAuthorizeAttribute = endpoint?.Metadata.GetMetadata<IAuthorizeData>() != null;
         if (!hasAuthorizeAttribute)

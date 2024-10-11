@@ -33,7 +33,8 @@ namespace BookAPI.Models
 
     public static class GlobalVariables
     {
-        public static string maKh { get; set; }
+        public static string email { get; set; }
+       // public static string UserId { get; set; }
     }
     public static class TokenGlobalVariable
     {

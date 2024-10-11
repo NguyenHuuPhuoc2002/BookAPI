@@ -108,7 +108,7 @@ namespace BookAPI.Controllers
 
             var token = await GenerateToken(user);
             var cachedToken = await _responseCacheService.GetCacheResponseAsync(token.AccessToken);
-            GlobalVariables.maKh = user.UserName;
+            GlobalVariables.email = user.UserName;
             TokenGlobalVariable.Token = token.AccessToken;
             _logger.LogInformation("Đăng nhập thành công");
             return Ok(token);
@@ -162,6 +162,7 @@ namespace BookAPI.Controllers
             var authClaim = new List<Claim>
             {
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
 
             };
@@ -254,7 +255,18 @@ namespace BookAPI.Controllers
                         });
                     }
                 }
-
+                var storedToken = await _refreshToken.GetTokenAsync(tokenModel.RefreshToken);
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                // New Check: Compare userId in storedToken with current userId
+                if (storedToken.UserId != userId) 
+                {
+                    _logger.LogWarning("Refresh token không khớp với userId hiện tại");
+                    return Ok(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Refresh token does not match current user"
+                    });
+                }
                 _logger.LogDebug("Kiểm tra token đã hết hạn chưa");
                 //check 3: Check accessToken expire?
                 var utcExpireDate = long.Parse(tokenInverification.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Exp).Value);
@@ -273,7 +285,7 @@ namespace BookAPI.Controllers
 
                 _logger.LogDebug("Kiểm tra token đã tồn tại trong csdl hay chưa");
                 //check 4: check refreshtoken exist in DB
-                var storedToken = await _refreshToken.GetTokenAsync(tokenModel.RefreshToken);
+              
                 if (storedToken is null)
                 {
                     _logger.LogWarning("Token đã tồn tại trong csdl");
