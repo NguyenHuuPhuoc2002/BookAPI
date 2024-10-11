@@ -81,13 +81,6 @@ namespace BookAPI.Repositories
             {
                 _logger.LogInformation("Truy vấn lấy giỏ hàng với mã KH {maKh}", maKh);
                 var cart = await _context.GioHangs.SingleOrDefaultAsync(p => p.MaKH == maKh);
-
-                if (cart == null)
-                {
-                    _logger.LogWarning("Không tìm thấy giỏ hàng có mã KH {maKh}", maKh);
-                    throw new KeyNotFoundException($"Không tìm thấy giỏ hàng của khách hàng {maKh}");
-                }
-
                 _logger.LogInformation("Trả về một đối tượng giỏ hàng thành công");
                 return cart;
             }
