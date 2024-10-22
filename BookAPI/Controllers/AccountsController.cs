@@ -278,7 +278,7 @@ namespace BookAPI.Controllers
 
                 if (expireDate > DateTime.UtcNow)
                 {
-                    _logger.LogWarning("Token đã hết hạn");
+                    _logger.LogWarning("Token chưa đã hết hạn");
                     return Ok(new ApiResponse
                     {
                         Success = false,
@@ -291,7 +291,7 @@ namespace BookAPI.Controllers
               
                 if (storedToken is null)
                 {
-                    _logger.LogWarning("Token đã tồn tại trong csdl");
+                    _logger.LogWarning("Token không tồn tại trong csdl");
                     return Ok(new ApiResponse
                     {
                         Success = false,
@@ -362,8 +362,7 @@ namespace BookAPI.Controllers
         private DateTime ConvertUnixTimeToDaateTime(long utcExpireDate)
         {
             var dateTimeInterval = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dateTimeInterval.AddSeconds(utcExpireDate).ToUniversalTime();
-            return dateTimeInterval;
+            return dateTimeInterval.AddSeconds(utcExpireDate);
         }
         [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(string email)
