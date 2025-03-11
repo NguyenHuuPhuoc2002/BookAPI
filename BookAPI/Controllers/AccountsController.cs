@@ -218,7 +218,7 @@ namespace BookAPI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                throw new MissingFieldException("Nhập đầy đủ thông tin bắt buộc");
+                throw new MissingFieldException("Nhập đầy đủ thông tin bắt buộc !");
             }
 
             _logger.LogInformation("Yêu cầu đăng nhập từ user có email {email}", model.Email);
