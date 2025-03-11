@@ -73,11 +73,11 @@ namespace BookAPI.Repositories
             try
             {
                 var user = await _userManager.FindByIdAsync(id);
-                if(user == null)
-                {
-                    _logger.LogWarning("Không tìm thấy user {email}", id);
-                    throw new KeyNotFoundException("Không tìm thấy user");
-                }
+                //if(user == null)
+                //{
+                //    _logger.LogWarning("Không tìm thấy user {email}", id);
+                //    throw new KeyNotFoundException("Không tìm thấy user");
+                //}
                 return user;
             }
             catch (Exception ex)

@@ -11,6 +11,7 @@ using BookAPI.Services;
 using BookAPI.Services.Interfaces;
 using Common;
 using EcommerceWeb.Services;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -59,6 +60,8 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.Configure<AppSetting>(builder.Configuration.GetSection("JWT"));
+
+#region setup cache
 var cacheDurationInHours = builder.Configuration.GetValue<int>("CacheSettings:CacheDurationInHours");
 var cacheSlidingExpirationInMinutes = builder.Configuration.GetValue<int>("CacheSettings:SlidingExpirationInMinutes");
 var cacheDuration = TimeSpan.FromHours(cacheDurationInHours);
@@ -72,6 +75,7 @@ builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 10240; // Giới hạn tổng kích thước bộ nhớ cache (10 MB)
 });
+#endregion
 
 #region redis custom
 var redisConfiguration = new RedisConfiguration();
@@ -116,6 +120,12 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
     };
+}).AddGoogle(GoogleDefaults.AuthenticationScheme, googleOptions =>
+{
+    googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    googleOptions.CallbackPath = new PathString(builder.Configuration["Authentication:Google:CallbackPath"]);// "/signin-google";
+
 });
 #endregion
 

@@ -3,6 +3,8 @@ using BookAPI.Services.Interfaces;
 using Common.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 public class TokenValidationMiddleware
 {
@@ -32,12 +34,16 @@ public class TokenValidationMiddleware
         }
 
         var accessToken = authorizationHeader.Split(" ").Last();
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadToken(accessToken) as JwtSecurityToken;
+        var email = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        var keyCache = $"{email}:{accessToken}";
 
         // Lấy IResponseCacheService từ HttpContext
         var responseCacheService = context.RequestServices.GetService<IResponseCacheService>();
         
         // Kiểm tra xem token có trong Redis hay không
-        var cachedData = await responseCacheService.GetCacheResponseAsync(email);
+        var cachedData = await responseCacheService.GetCacheResponseAsync(keyCache);
 
         // Nếu Redis không có dữ liệu thì tiếp tục request mà không kiểm tra
         if (string.IsNullOrEmpty(cachedData))

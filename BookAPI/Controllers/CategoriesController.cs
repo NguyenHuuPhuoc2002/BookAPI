@@ -59,7 +59,7 @@ namespace BookAPI.Controllers
             return Ok(loai);
         }
         [HttpPost("categories")]
-        //[Authorize(Roles = AppRole.ADMIN)]
+        [Authorize(Roles = AppRole.ADMIN)]
         public async Task<IActionResult> Add(LoaiModel model)
         {
             if (!ModelState.IsValid)

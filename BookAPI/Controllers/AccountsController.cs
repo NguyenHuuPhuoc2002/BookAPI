@@ -8,6 +8,9 @@ using BookAPI.Services.Interfaces;
 using Common.Exceptions;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -57,37 +60,158 @@ namespace BookAPI.Controllers
             _responseCacheService = responseCacheService;
             _userManager = userManager;
         }
+        #region Login-By-Google
+
+        [HttpGet("loginByGoogle")]
+        public async Task<IActionResult> LoginByGoogle()
+        {
+            await HttpContext.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
+                new AuthenticationProperties
+                {
+                    RedirectUri = Url.Action("GoogleResponse")
+                });
+
+            return Challenge(); 
+        }
+
+        [HttpGet("GoogleResponese")]
+        public async Task<IActionResult> GoogleResponse()
+        {
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                return Unauthorized(new ApiResponse
+                {
+                    Message = "Lỗi !"
+                });
+            }
+            var claims = result.Principal.Identities.FirstOrDefault()?.Claims.Select(claim => new
+            {
+                claim.Issuer,
+                claim.OriginalIssuer,
+                claim.Type,
+                claim.Value
+            });
+
+            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var emailName = email?.Split('@')[0];
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(emailName))
+            {
+                return Unauthorized(new ApiResponse
+                {
+                    Message = "Lỗi !"
+                });
+            }
+
+            var existingUser = await _account.FindByEmailAsync(email);
+            if (existingUser == null)
+            {
+                var newUser = new SignUpModel
+                {
+                    Email = email,
+                    FirstName = name,
+                    LastName = null,
+                    DayOfBirth = null,
+                    Hinh = null,
+                    Password = "abc@ABC123",
+                    ConfirmPassword = "abc@ABC123",
+                    Gender = null,
+                };
+
+                var createResult = await _account.SignUpAsync(newUser);
+                if (createResult == null)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Message = "Không tạo được tài khoản !"
+                    });
+                }
+            }
+
+            //Kiểm tra và đăng nhập user
+            var loginModel = new SignInModel { Email = email, Password = "abc@ABC123" };
+
+            var user = await _account.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound(new ApiResponse
+                {
+                    Message = "Không tìm thấy tài khoản!"
+                });
+            }
+
+            bool isPasswordValid = await _userManager.CheckPasswordAsync(user, loginModel.Password);
+
+            if (!isPasswordValid)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Message = "Sai thông tin đăng nhập!"
+                });
+            }
+            var token = await GenerateToken(user);
+            var cachedToken = await _responseCacheService.GetCacheResponseAsync(token.AccessToken);
+            GlobalVariables.email = user.UserName;
+            TokenGlobalVariable.Token = token.AccessToken;
+
+            return Ok(token);
+           
+        }
+        #endregion 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> SignOut([FromBody] LogOutRequestModel requestToken)
         {
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;          
-            if (requestToken.AccessToken == TokenGlobalVariable.Token)
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.ReadToken(requestToken.AccessToken) as JwtSecurityToken;
+            if (token == null)
             {
-                var dataRequest = new LogOutRequestModel
+                return BadRequest(new ApiResponse
                 {
-                    AccessToken = requestToken.AccessToken,
-                };
-
-                var cacheDataString = JsonConvert.SerializeObject(dataRequest);
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var token = tokenHandler.ReadToken(requestToken.AccessToken) as JwtSecurityToken;
-                var expires = token.ValidTo; 
-                var remainingTime = expires - DateTime.UtcNow;
-
-                await _responseCacheService.SetCacheReponseAsync(email, cacheDataString, remainingTime);
-                var storedToken = await _refreshToken.GetTokenAsync(requestToken.RefreshToken);
-                if (storedToken != null)
-                {
-                    storedToken.IsRevoked = true;
-                    await _refreshToken.UpdateAsync(storedToken, requestToken.RefreshToken);
-                }
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Đăng xuất thành công"
+                    Success = false,
+                    Message = "Access Token không hợp lệ"
                 });
             }
+            var email = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+            if (string.IsNullOrEmpty(requestToken.AccessToken))
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Access Token không hợp lệ"
+                });
+            }
+
+            var dataRequest = new LogOutRequestModel
+            {
+                AccessToken = requestToken.AccessToken,
+            };
+            var cacheDataString = JsonConvert.SerializeObject(dataRequest);//Chuyển đổi dữ liệu token thành chuỗi JSON để lưu vào cache
+
+            //Lấy thời gian hết hạn của Access Token
+            var expires = token.ValidTo; 
+            var remainingTime = expires - DateTime.UtcNow;
+
+            var keyCache = $"{email}:{requestToken.AccessToken}"; 
+            //await _responseCacheService.SetCacheReponseAsync(email, cacheDataString, remainingTime);
+            await _responseCacheService.SetCacheReponseAsync(keyCache, cacheDataString, remainingTime);
+
+            //Kiểm tra và thu hồi Refresh Token
+            var storedToken = await _refreshToken.GetTokenAsync(requestToken.RefreshToken);
+            if (storedToken != null)
+            {
+                storedToken.IsRevoked = true;
+                await _refreshToken.UpdateAsync(storedToken, requestToken.RefreshToken);
+            }
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Đăng xuất thành công"
+            });
+        }
 
         [HttpPost("login")]
         public async Task<IActionResult> SignIn(SignInModel model)
@@ -106,6 +230,7 @@ namespace BookAPI.Controllers
             }
 
             var token = await GenerateToken(user);
+
             var cachedToken = await _responseCacheService.GetCacheResponseAsync(token.AccessToken);
             GlobalVariables.email = user.UserName;
             TokenGlobalVariable.Token = token.AccessToken;
