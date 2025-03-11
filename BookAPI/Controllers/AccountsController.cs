@@ -89,9 +89,6 @@ namespace BookAPI.Controllers
                 });
             }
 
-            throw new Exception();
-        }
-
         [HttpPost("login")]
         public async Task<IActionResult> SignIn(SignInModel model)
         {
