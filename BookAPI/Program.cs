@@ -108,6 +108,8 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    
+
 }).AddJwtBearer(options =>
 {
     options.SaveToken = true;
@@ -172,6 +174,7 @@ builder.Services.AddSwaggerGen(c =>
                         new string[] {}
                     }
     });
+
 });
 
 //connect database
@@ -213,6 +216,7 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<CacheService>();
 builder.Services.AddScoped<IResponseCacheService, ResponseCacheService>();
+builder.Services.AddScoped<IGoogleService, GoogleService>();
 #endregion
 
 // Đăng ký AutoMapper

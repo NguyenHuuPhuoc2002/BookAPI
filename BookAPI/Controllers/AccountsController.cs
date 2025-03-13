@@ -6,11 +6,13 @@ using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
 using BookAPI.Services.Interfaces;
 using Common.Exceptions;
+using Google.Apis.Auth.OAuth2;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -25,6 +27,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Service.Interface;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -41,6 +44,7 @@ namespace BookAPI.Controllers
         private readonly IRefreshTokenService _refreshToken;
         private readonly AppSetting _appSettings;
         private readonly ILogger<AccountsController> _logger;
+        private readonly IGoogleService _googleService;
         private readonly IMailService _email;
         private readonly IResponseCacheService _responseCacheService;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -48,7 +52,8 @@ namespace BookAPI.Controllers
 
         public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
                                    IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger, IGioHangService cart,
-                                   IMailService mail, UserManager<ApplicationUser> userManager, IResponseCacheService responseCacheService)
+                                   IMailService mail, UserManager<ApplicationUser> userManager, IResponseCacheService responseCacheService,
+                                   IGoogleService googleService)
         {
             _cart = cart;
             _account = account;
@@ -56,47 +61,87 @@ namespace BookAPI.Controllers
             _refreshToken = refreshToken;
             _appSettings = optionsMonitor.CurrentValue;
             _logger = logger;
+            _googleService = googleService;
             _email = mail;
             _responseCacheService = responseCacheService;
             _userManager = userManager;
         }
-        #region Login-By-Google
-        [HttpGet("loginByGoogle")]
-        public async Task<IActionResult> LoginByGoogle()
+       
+        [HttpGet("login-google")]
+        [AllowAnonymous]
+        public IActionResult LoginByGoogle()
         {
-            await HttpContext.ChallengeAsync(GoogleDefaults.AuthenticationScheme,
-                new AuthenticationProperties
-                {
-                    RedirectUri = Url.Action("GoogleResponse")
-                });
-
+            var redirectUri = Url.Action("GoogleResponse", "Accounts", null, Request.Scheme);
+            var googleAuthUrl = _googleService.GetGoogleAuthUrl(redirectUri);
+            return Ok(new { success = true, location = googleAuthUrl });
+            
         }
-
-        [HttpGet("GoogleResponese")]
-        public async Task<IActionResult> GoogleResponse()
+     
+        [HttpGet("GoogleResponse")]
+        public async Task<IActionResult> GoogleResponse([FromQuery] string code)
         {
-            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-            if (!result.Succeeded)
+            //Ckeck code null ?
+            if (string.IsNullOrEmpty(code))
             {
                 return Unauthorized(new ApiResponse
                 {
-                    Message = "Lỗi !"
+                    Success = false,
+                    Message = "Không nhận được mã xác thực từ Google!" 
                 });
             }
 
-            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-            var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            var emailName = email?.Split('@')[0];
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(emailName))
+            // Gửi yêu cầu đến Google để đổi mã code lấy access_token
+            using var httpClient = new HttpClient();
+            var tokenRequest = new Dictionary<string, string>
             {
-                return Unauthorized(new ApiResponse
-                {
-                    Message = "Lỗi !"
+                { "client_id", _configuration["Authentication:Google:ClientId"] },
+                { "client_secret", _configuration["Authentication:Google:ClientSecret"] },
+                { "code", code },
+                { "grant_type", "authorization_code" },
+                { "redirect_uri", Url.Action("GoogleResponse", "Accounts", null, Request.Scheme) }
+            };
+
+            var response = await httpClient.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(tokenRequest));
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return Unauthorized(new ApiResponse 
+                { 
+                    Success = false,
+                    Message = "Lỗi xác thực Google!", 
+                    Data = jsonResponse 
                 });
             }
 
+            // Parse kết quả
+            var tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonResponse);
+
+            var accessToken = tokenData["access_token"];
+
+            // Lấy thông tin người dùng từ access_token
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            var userInfoResponse = await httpClient.GetAsync("https://www.googleapis.com/oauth2/v2/userinfo");
+            var userInfoJson = await userInfoResponse.Content.ReadAsStringAsync();
+            var userInfo = JsonConvert.DeserializeObject<Dictionary<string, string>>(userInfoJson);
+
+            //Lấy email, name từ json
+            var email = userInfo["email"];
+            var name = userInfo["name"];
+           
+            //check emai, name null ?
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name))
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Message = "email hoặc name là null !"
+                });
+            }
+
+            //check email đã tồn tại trong db chưa
             var existingUser = await _account.FindByEmailAsync(email);
+
+            //nếu = null thì đăng kí tài khoản
             if (existingUser == null)
             {
                 var newUser = new SignUpModel
@@ -144,11 +189,12 @@ namespace BookAPI.Controllers
             }
             var token = await GenerateToken(user);
             var cachedToken = await _responseCacheService.GetCacheResponseAsync(token.AccessToken);
-            GlobalVariables.email = user.UserName;
-            TokenGlobalVariable.Token = token.AccessToken;
+            //GlobalVariables.email = user.UserName;
+            //TokenGlobalVariable.Token = token.AccessToken;
 
             return Ok(token);
-           
+        }
+
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> SignOut([FromBody] LogOutRequestModel requestToken)
