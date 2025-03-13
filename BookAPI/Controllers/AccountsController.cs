@@ -61,7 +61,6 @@ namespace BookAPI.Controllers
             _userManager = userManager;
         }
         #region Login-By-Google
-
         [HttpGet("loginByGoogle")]
         public async Task<IActionResult> LoginByGoogle()
         {
@@ -71,7 +70,6 @@ namespace BookAPI.Controllers
                     RedirectUri = Url.Action("GoogleResponse")
                 });
 
-            return Challenge(); 
         }
 
         [HttpGet("GoogleResponese")]
@@ -85,13 +83,6 @@ namespace BookAPI.Controllers
                     Message = "Lỗi !"
                 });
             }
-            var claims = result.Principal.Identities.FirstOrDefault()?.Claims.Select(claim => new
-            {
-                claim.Issuer,
-                claim.OriginalIssuer,
-                claim.Type,
-                claim.Value
-            });
 
             var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
@@ -158,8 +149,6 @@ namespace BookAPI.Controllers
 
             return Ok(token);
            
-        }
-        #endregion 
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> SignOut([FromBody] LogOutRequestModel requestToken)
