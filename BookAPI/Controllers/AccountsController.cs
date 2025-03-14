@@ -4,6 +4,7 @@ using BookAPI.Helper;
 using BookAPI.Models;
 using BookAPI.Repositories;
 using BookAPI.Repositories.Interfaces;
+using BookAPI.Services;
 using BookAPI.Services.Interfaces;
 using Common.Exceptions;
 using Google.Apis.Auth.OAuth2;
@@ -26,6 +27,7 @@ using MimeKit.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Service.Interface;
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -48,12 +50,15 @@ namespace BookAPI.Controllers
         private readonly IMailService _email;
         private readonly IResponseCacheService _responseCacheService;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly GoogleAuthSettings _googleAuthSettings;
+        private readonly FacebookAuthSettings _facebookAuthOptions;
+        private readonly IFacebookService _facebookService;
         private SecurityToken validatedToken;
 
-        public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken,
-                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger, IGioHangService cart,
+        public AccountsController(IAccountService account, IConfiguration configuration, IRefreshTokenService refreshToken, IGioHangService cart, 
+                                   IOptionsMonitor<AppSetting> optionsMonitor, ILogger<AccountsController> logger, IOptions<FacebookAuthSettings> facebookAuthOptions,
                                    IMailService mail, UserManager<ApplicationUser> userManager, IResponseCacheService responseCacheService,
-                                   IGoogleService googleService)
+                                   IGoogleService googleService, IOptions<GoogleAuthSettings> googleAuthOptions, IFacebookService facebookService)
         {
             _cart = cart;
             _account = account;
@@ -65,9 +70,127 @@ namespace BookAPI.Controllers
             _email = mail;
             _responseCacheService = responseCacheService;
             _userManager = userManager;
+            _googleAuthSettings = googleAuthOptions.Value;
+            _facebookAuthOptions = facebookAuthOptions.Value;
+            _facebookService = facebookService;
         }
-       
-        [HttpGet("login-google")]
+
+        [HttpGet("login-by-facebook")]
+        [AllowAnonymous]
+        public IActionResult LoginByFacebook()
+        {
+            var redirectUri = Url.Action("FacebookResponse", "Accounts", null, Request.Scheme);
+            var facebookAuthUrl = _facebookService.GetFacebookAuthUrl(redirectUri);
+            return Ok(new 
+            {
+                Success = true,
+                Url = facebookAuthUrl
+            });
+        }
+
+        [HttpGet("FacebookResponse")]
+        public async Task<IActionResult> FacebookResponse([FromQuery] string code)
+        {
+            //Ckeck code null ?
+            if (string.IsNullOrEmpty(code))
+            {
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Không nhận được mã xác thực từ Google!"
+                });
+            }
+
+            // Gửi yêu cầu đến Google để đổi mã code lấy access_token
+            using var httpClient = new HttpClient();
+            var tokenRequest = new Dictionary<string, string>
+            {
+                { "client_id", _facebookAuthOptions.ClientId},
+                { "client_secret", _facebookAuthOptions.ClientSecret},
+                { "code", code },
+                { "grant_type", "authorization_code" },
+                { "redirect_uri", Url.Action("FacebookResponse", "Accounts", null, Request.Scheme) }
+            };
+            var response = await httpClient.PostAsync("https://graph.facebook.com/v18.0/oauth/access_token", new FormUrlEncodedContent(tokenRequest));
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                return Unauthorized(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Lỗi xác thực Google!",
+                    Data = jsonResponse
+                });
+            }
+
+            // Parse kết quả
+            var tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonResponse);
+            var accessToken = tokenData["access_token"];
+
+            var userInfoResponse = await httpClient.GetStringAsync(
+                    $"https://graph.facebook.com/me?fields=id,first_name,last_name,email&access_token={accessToken}");
+
+            var userInfo = JsonConvert.DeserializeObject<Dictionary<string, object>>(userInfoResponse);
+            var email = userInfo["email"].ToString();
+            var firstName = userInfo["first_name"].ToString();
+            var lastName = userInfo["last_name"].ToString();
+
+            var existingUser = await _account.FindByEmailAsync(email);
+
+            //nếu = null thì đăng kí tài khoản
+            if (existingUser == null)
+            {
+                var newUser = new SignUpModel
+                {
+                    Email = email,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    DayOfBirth = null,
+                    Hinh = null,
+                    Password = "abc@ABC123",
+                    ConfirmPassword = "abc@ABC123",
+                    Gender = null,
+                };
+
+                var createResult = await _account.SignUpAsync(newUser);
+                if (createResult == null)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Message = "Không tạo được tài khoản !"
+                    });
+                }
+            }
+
+            //Kiểm tra và đăng nhập user
+            var loginModel = new SignInModel { Email = email, Password = "abc@ABC123" };
+
+            var user = await _account.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return NotFound(new ApiResponse
+                {
+                    Message = "Không tìm thấy tài khoản!"
+                });
+            }
+
+            bool isPasswordValid = await _userManager.CheckPasswordAsync(user, loginModel.Password);
+
+            if (!isPasswordValid)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Message = "Sai thông tin đăng nhập!"
+                });
+            }
+            var token = await GenerateToken(user);
+            var cachedToken = await _responseCacheService.GetCacheResponseAsync(token.AccessToken);
+
+            return Ok(token);
+        }
+
+        [HttpGet("login-by-google")]
         [AllowAnonymous]
         public IActionResult LoginByGoogle()
         {
@@ -94,8 +217,8 @@ namespace BookAPI.Controllers
             using var httpClient = new HttpClient();
             var tokenRequest = new Dictionary<string, string>
             {
-                { "client_id", _configuration["Authentication:Google:ClientId"] },
-                { "client_secret", _configuration["Authentication:Google:ClientSecret"] },
+                { "client_id", _googleAuthSettings.ClientId },
+                { "client_secret", _googleAuthSettings.ClientSecret },
                 { "code", code },
                 { "grant_type", "authorization_code" },
                 { "redirect_uri", Url.Action("GoogleResponse", "Accounts", null, Request.Scheme) }
@@ -127,10 +250,12 @@ namespace BookAPI.Controllers
 
             //Lấy email, name từ json
             var email = userInfo["email"];
-            var name = userInfo["name"];
+            var firstName = userInfo["given_name"];
+            var lastName = userInfo["family_name"];
+            var avartar = userInfo["picture"];
            
             //check emai, name null ?
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(firstName) || string.IsNullOrEmpty(lastName))
             {
                 return BadRequest(new ApiResponse
                 {
@@ -147,8 +272,8 @@ namespace BookAPI.Controllers
                 var newUser = new SignUpModel
                 {
                     Email = email,
-                    FirstName = name,
-                    LastName = null,
+                    FirstName = firstName,
+                    LastName = lastName,
                     DayOfBirth = null,
                     Hinh = null,
                     Password = "abc@ABC123",

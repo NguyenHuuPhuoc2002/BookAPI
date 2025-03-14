@@ -28,12 +28,7 @@ using Service.Interface;
 using StackExchange.Redis;
 using System.Text;
 
-/*namespace BookAPI
-{
-    public class Program
-    {
-        public static async void Main(string[] args)
-        {*/
+
 #region Logging
 // Cấu hình console để sử dụng UTF-8
 Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -102,6 +97,9 @@ builder.Services.Configure<RedisConfiguration>(builder.Configuration.GetSection(
 //Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
                             .AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
+
+builder.Services.Configure<GoogleAuthSettings>(builder.Configuration.GetSection("Authentication:Google"));
+builder.Services.Configure<FacebookAuthSettings>(builder.Configuration.GetSection("Authentication:Facebook"));
 //authentication - Token 
 builder.Services.AddAuthentication(options =>
 {
@@ -128,6 +126,12 @@ builder.Services.AddAuthentication(options =>
     googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
     googleOptions.CallbackPath = new PathString(builder.Configuration["Authentication:Google:CallbackPath"]);// "/signin-google";
 
+})
+.AddFacebook(facebookOptions =>
+{
+    facebookOptions.AppId = builder.Configuration["Authentication:Facebook:ClientId"];
+    facebookOptions.AppSecret = builder.Configuration["Authentication:Facebook:ClientSecret"];
+    facebookOptions.CallbackPath = new PathString(builder.Configuration["Authentication:Facebook:CallbackPath"]);
 });
 #endregion
 
@@ -217,6 +221,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<CacheService>();
 builder.Services.AddScoped<IResponseCacheService, ResponseCacheService>();
 builder.Services.AddScoped<IGoogleService, GoogleService>();
+builder.Services.AddScoped<IFacebookService, FacebookService>();
 #endregion
 
 // Đăng ký AutoMapper
@@ -252,13 +257,13 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
     });
 }
-app.UseCors("AllowAllOrigins"); // Apply CORS policy
-app.UseHttpsRedirection(); // Chuyển hướng HTTP sang HTTPS
-app.UseMiddleware<TokenValidationMiddleware>(); // Kiểm tra token
-app.UseMiddleware<ErrorHandleMiddleware>(); // Xử lý lỗi
-app.UseAuthentication(); // Xác thực người dùng
-app.UseAuthorization(); // Ủy quyền người dùng
-app.MapControllers(); // Ánh xạ các controller
+app.UseCors("AllowAllOrigins"); 
+app.UseHttpsRedirection(); 
+app.UseMiddleware<TokenValidationMiddleware>(); 
+app.UseMiddleware<ErrorHandleMiddleware>(); 
+app.UseAuthentication(); 
+app.UseAuthorization(); 
+app.MapControllers(); 
 
 
 var scope = app.Services.CreateScope();
@@ -277,6 +282,4 @@ catch (Exception ex)
 }
 
 app.Run();
-/*        }
-    }
-}*/
+

@@ -40,4 +40,15 @@ namespace BookAPI.Models
     {
         public static string Token { get; set; }
     }
+
+    public class GoogleAuthSettings
+    {
+        public string ClientId { get; set; }
+        public string ClientSecret { get; set; }
+    }
+    public class FacebookAuthSettings
+    {
+        public string ClientId { get; set; }
+        public string ClientSecret { get; set; }
+    }
 }

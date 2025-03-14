@@ -18,10 +18,10 @@ namespace BookAPI.Services
             var clientId = _configuration["Authentication:Google:ClientId"];
             var googleAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
                      $"client_id={clientId}" +
-                     $"&response_type=code" +  // Lấy mã code thay vì token trực tiếp
+                     $"&response_type=code" +  
                      $"&scope=openid%20profile%20email" +
                      $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
-                     $"&state={Guid.NewGuid()}"; // Tránh tấn công CSRF
+                     $"&state={Guid.NewGuid()}";
             return googleAuthUrl;
         }
     }
