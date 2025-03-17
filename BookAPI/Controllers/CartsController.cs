@@ -130,59 +130,6 @@ namespace BookAPI.Controllers
 
             #endregion
         }
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> GetCart()
-        {
-            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
-            var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
-            _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
-            return Ok(new ApiResponse
-            {
-                Success = true,
-                Message = "Lấy thành công!",
-                Data = cartItems
-
-            });
-        }
-
-        [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> AddBook(string id)
-        {
-            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
-            _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKh);
-            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
-            _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
-            var book = await _sach.GetBookByIdAsync(id);
-            _logger.LogInformation("Nhận yêu cầu lấy sách trong giỏ hàng với mã {id} và giỏ hàng ID {gioHangId}", id, cart.GioHangId);
-            var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
-            if (cartItem == null)
-            {
-                var result = new CartModel
-                {
-                    Anh = book.Anh ?? "",
-                    TenSach = book.TenSach,
-                    DonGia = book.Gia ?? 0,
-                    SoLuong = 1,
-                    ThanhTien = book.Gia ?? 0,
-                    GiamGia = 0,
-                    GioHangId = cart.GioHangId,
-                    MaSach = book.MaSach
-                };
-
-                await _cartItem.AddAsync(result);
-                _logger.LogInformation("Thêm sách với mã {BookId} vào giỏ hàng cho khách hàng với mã {CustomerId} thành công", result.MaSach, maKh);
-                return Ok(result);
-            }
-            else
-            {
-                await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, 1);
-                _logger.LogInformation("Cập nhật số lượng sách cho khách hàng với mã {CustomerId} thành công", maKh);
-                return NoContent();
-            }
-        }
 
         [HttpPost("checkout")]
         [Authorize]

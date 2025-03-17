@@ -136,13 +136,6 @@ builder.Services.AddAuthentication(options =>
 #endregion
 
 builder.Host.UseSerilog();
-//builder.Host.UseSerilog((context, services, configuration) => configuration
-//    .ReadFrom.Configuration(context.Configuration)
-//    .Enrich.FromLogContext());
-//// Xóa các provider logging mặc định và thêm Serilog
-//builder.Logging.ClearProviders();
-//builder.Logging.AddSerilog();
-
 
 // Add services to the container.
 
@@ -185,44 +178,6 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<DataContext>(options =>
 options.UseSqlServer(builder.Configuration.GetConnectionString("DbBook")));
 
-#region Repository - Service
-// Repository
-builder.Services.AddScoped<ISachRepository, SachRepository>();
-builder.Services.AddScoped<ILoaiRepository, LoaiRepository>();
-builder.Services.AddScoped<IGioHangRepository, GioHangRepository>();
-builder.Services.AddScoped<IGioHangChiTietRepository, GioHangChiTietRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-builder.Services.AddScoped<IHoaDonRepository, HoaDonRepository>();
-builder.Services.AddScoped<IChiTietHoaDonRepository, ChiTietHoaDonRepository>();
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
-builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
-builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-// Service
-builder.Services.AddScoped<ISachService, SachService>();
-builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-builder.Services.AddScoped<ILoaiService, LoaiService>();
-builder.Services.AddScoped<IGioHangService, GioHangService>();
-builder.Services.AddScoped<IGioHangChiTietService, GioHangChiTietService>();
-builder.Services.AddScoped<IHoaDonService, HoaDonService>();
-builder.Services.AddScoped<IChiTietHoaDonService, ChiTietHoaDonService>();
-builder.Services.AddSingleton<IVnPayService, VnPayService>();
-builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddSingleton<IMailService, MailService>();
-builder.Services.AddScoped<IPublisherService, PublisherService>();
-builder.Services.AddScoped<ISupplierService, SupplierService>();
-builder.Services.AddScoped<IUserRoleService, UserRoleService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<CacheService>();
-builder.Services.AddScoped<IResponseCacheService, ResponseCacheService>();
-builder.Services.AddScoped<IGoogleService, GoogleService>();
-builder.Services.AddScoped<IFacebookService, FacebookService>();
-#endregion
 
 // Đăng ký AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
