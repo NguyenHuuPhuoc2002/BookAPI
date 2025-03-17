@@ -43,9 +43,13 @@ namespace BookAPI.Controllers
             _vnPayService = vnPayService;
         }
         [HttpGet("PaymentCallBack")]
-        public async Task<IActionResult> PaymentCallBack()
+        public async Task<IActionResult> PaymentCallBack([FromQuery] string email)
         {
-            var cart = await _cart.GetCartByMaKhAsync(GlobalVariables.email);
+            if (string.IsNullOrEmpty(email))
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = "Không tìm thấy email!" });
+            }
+            var cart = await _cart.GetCartByMaKhAsync(email);
             var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
             var response = _vnPayService.PaymentExecute(Request.Query);
             if (response == null)
@@ -60,7 +64,7 @@ namespace BookAPI.Controllers
 
             var hoaDon = new HoaDon
             {
-                MaKH = GlobalVariables.email,
+                MaKH = email,
                 HoTen = _model.HoTen,
                 DiaChi = _model.DiaChi,
                 DienThoai = _model.SoDienThoai,
@@ -77,6 +81,7 @@ namespace BookAPI.Controllers
             await _cart.BeginTransactionAsync();
             try
             {
+                await _cart.CommitTransactionAsync();
                 // Thêm hóa đơn
                 await _cart.AddHoaDonAsync(hoaDon);
                 _logger.LogInformation("Thêm đơn hàng thành công");
@@ -107,12 +112,13 @@ namespace BookAPI.Controllers
                 _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
                 // Xóa các mặt hàng trong giỏ hàng của khách hàng
                 // Commit transaction sau khi tất cả các thao tác đã hoàn thành
-                await _cart.CommitTransactionAsync();
+               
                 await _cartItem.ClearAllAsync(cart.GioHangId);
-                _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", GlobalVariables.email);
-                _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", GlobalVariables.email);
+                _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", email);
+                _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", email);
                 // Trả về kết quả
                 var order = _mapper.Map<HoaDonModel>(hoaDon);
+               
                 return Ok(new ApiResponse
                 {
                     Success = true,
@@ -124,7 +130,7 @@ namespace BookAPI.Controllers
             {
                 // Rollback transaction nếu có lỗi xảy ra
                 await _cart.RollbackTransactionAsync();
-                _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.email);
+                _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", email);
                 throw new AppException("Thanh toán không thành công!");
             }
 
@@ -135,13 +141,13 @@ namespace BookAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Checkout(CheckoutModel model, string payment = MyConstants.PAYMENT_COD)
         {
-            GlobalVariables.email = User.FindFirst(ClaimTypes.Email)?.Value;
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (ModelState.IsValid)
             {
                 _model = model;
 
-                _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", GlobalVariables.email);
-                var cart = await _cart.GetCartByMaKhAsync(GlobalVariables.email);
+                _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", email);
+                var cart = await _cart.GetCartByMaKhAsync(email);
                 var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
 
                 if (payment == MyConstants.PAYMENT_VNPAY)
@@ -152,23 +158,24 @@ namespace BookAPI.Controllers
                         CreatedDate = DateTime.Now,
                         Description = $"{model.HoTen} {model.SoDienThoai}",
                         FullName = model.HoTen,
-                        OrderId = new Random().Next(1000, 10000)
+                        OrderId = new Random().Next(1000, 10000),
+                        Email = email,
                     };
-                    var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, vnPayModel);
+                    var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, vnPayModel );
                     return Ok(new ApiResponse
                     {
                         Success = true,
                         Message = "Ok",
-                        Data = paymentUrl
+                        Data = paymentUrl 
                     });
                 }
 
-                _logger.LogInformation("Tạo đơn hàng cho khách hàng {maKh}", GlobalVariables.email);
+                _logger.LogInformation("Tạo đơn hàng cho khách hàng {maKh}", email);
                 #region Tạo Đơn Hàng
 
                 var hoaDon = new HoaDon
                 {
-                    MaKH = GlobalVariables.email,
+                    MaKH = email,
                     HoTen = model.HoTen,
                     DiaChi = model.DiaChi,
                     DienThoai = model.SoDienThoai,
@@ -213,22 +220,76 @@ namespace BookAPI.Controllers
 
                     _logger.LogInformation("Thêm chi tiết đơn hàng thành công");
                     await _cartItem.ClearAllAsync(cart.GioHangId);
-                    _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", GlobalVariables.email);
+                    _logger.LogInformation("Xóa mặt hàng sau khi thanh toán của khách hàng {maKh} thành công", email);
 
-                    _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", GlobalVariables.email);
+                    _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", email);
                     var order = _mapper.Map<HoaDonModel>(hoaDon);
                     return Ok(order);
                 }
                 catch (Exception ex)
                 {
                     await _cart.RollbackTransactionAsync();
-                    _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", GlobalVariables.email);
+                    _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", email);
                     throw new AppException("Thanh toán không thành công!");
                 }
                 #endregion
             }
             _logger.LogError("Dữ liệu không hợp lệ khi thanh toán đơn hàng");
             return BadRequest();
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetCart()
+        {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
+            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
+            var cartItems = await _cartItem.GetAllCartsAsync(cart.GioHangId);
+            _logger.LogInformation("Yêu cầu lấy tất cả sách trong giỏ hàng với {MaKh} thành công {count}", maKh, cartItems.Count());
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Lấy thành công!",
+                Data = cartItems
+
+            });
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddBook(string id)
+        {
+            var maKh = User.FindFirst(ClaimTypes.Email)?.Value;
+            _logger.LogInformation("Nhận yêu cầu lấy giỏ hàng với mã KH {MaKH}", maKh);
+            var cart = await _cart.GetCartByMaKhAsync(maKh) ?? await CreateCartAsync(maKh);
+            _logger.LogInformation("Nhận yêu cầu lấy sách với mã sách {MaSach}", id);
+            var book = await _sach.GetBookByIdAsync(id);
+            _logger.LogInformation("Nhận yêu cầu lấy sách trong giỏ hàng với mã {id} và giỏ hàng ID {gioHangId}", id, cart.GioHangId);
+            var cartItem = await _cartItem.GetCartItemByBookNameAsync(id, cart.GioHangId);
+            if (cartItem == null)
+            {
+                var result = new CartModel
+                {
+                    Anh = book.Anh ?? "",
+                    TenSach = book.TenSach,
+                    DonGia = book.Gia ?? 0,
+                    SoLuong = 1,
+                    ThanhTien = book.Gia ?? 0,
+                    GiamGia = 0,
+                    GioHangId = cart.GioHangId,
+                    MaSach = book.MaSach
+                };
+
+                await _cartItem.AddAsync(result);
+                _logger.LogInformation("Thêm sách với mã {BookId} vào giỏ hàng cho khách hàng với mã {CustomerId} thành công", result.MaSach, maKh);
+                return Ok(result);
+            }
+            else
+            {
+                await _cartItem.UpdateAsync(cartItem.GioHangChiTietId, 1);
+                _logger.LogInformation("Cập nhật số lượng sách cho khách hàng với mã {CustomerId} thành công", maKh);
+                return NoContent();
+            }
         }
 
         [HttpPut("update-amount")]

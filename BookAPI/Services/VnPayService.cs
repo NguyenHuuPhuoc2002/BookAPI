@@ -1,5 +1,6 @@
 ﻿using EcommerceWeb.Helpers;
 using EcommerceWeb.ViewModels;
+using System.Net;
 
 namespace EcommerceWeb.Services
 {
@@ -26,7 +27,10 @@ namespace EcommerceWeb.Services
 
             vnpay.AddRequestData("vnp_OrderInfo", "Thanh toán cho đơn hàng:" + model.OrderId);
             vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
-            vnpay.AddRequestData("vnp_ReturnUrl", _config["VnPay:PaymentBackReturnUrl"]);
+            //vnpay.AddRequestData("vnp_ReturnUrl", _config["VnPay:PaymentBackReturnUrl"]);
+
+            var returnUrl = $"{_config["VnPay:PaymentBackReturnUrl"]}?email={WebUtility.UrlEncode(model.Email)}";
+            vnpay.AddRequestData("vnp_ReturnUrl", returnUrl);
 
             vnpay.AddRequestData("vnp_TxnRef", model.OrderId.ToString()); // Mã tham chiếu của giao dịch tại hệ thống của merchant. Mã này là duy nhất dùng để phân biệt các đơn hàng gửi sang VNPAY. Không được trùng lặp trong ngày
 

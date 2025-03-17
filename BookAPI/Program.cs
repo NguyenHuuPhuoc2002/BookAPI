@@ -45,6 +45,7 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddRepository().AddService();
 //CORS
 builder.Services.AddCors(options =>
 {
