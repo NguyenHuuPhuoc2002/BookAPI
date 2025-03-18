@@ -133,8 +133,6 @@ namespace BookAPI.Controllers
                 _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", email);
                 throw new AppException("Thanh toán không thành công!");
             }
-
-            #endregion
         }
 
         [HttpPost("checkout")]
@@ -144,7 +142,6 @@ namespace BookAPI.Controllers
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (ModelState.IsValid)
             {
-                _model = model;
 
                 _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", email);
                 var cart = await _cart.GetCartByMaKhAsync(email);
@@ -159,7 +156,6 @@ namespace BookAPI.Controllers
                         Description = $"{model.HoTen} {model.SoDienThoai}",
                         FullName = model.HoTen,
                         OrderId = new Random().Next(1000, 10000),
-                        Email = email,
                     };
                     var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, vnPayModel );
                     return Ok(new ApiResponse
