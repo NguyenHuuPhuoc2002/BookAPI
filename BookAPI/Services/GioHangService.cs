@@ -48,7 +48,7 @@ namespace BookAPI.Services
 
         public async Task CommitTransactionAsync()
         {
-            await _cart.RollbackTransactionAsync();
+            await _cart.CommitTransactionAsync();
         }
 
         public async Task RollbackTransactionAsync()

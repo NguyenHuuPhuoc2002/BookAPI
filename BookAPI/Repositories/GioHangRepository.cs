@@ -124,7 +124,7 @@ namespace BookAPI.Repositories
         }
         public async Task CommitTransactionAsync()
         {
-            await _context.Database.RollbackTransactionAsync();
+            await _context.Database.CommitTransactionAsync();
         }
         public async Task RollbackTransactionAsync()
         {

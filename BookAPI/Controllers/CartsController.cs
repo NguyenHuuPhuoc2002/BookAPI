@@ -97,7 +97,7 @@ namespace BookAPI.Controllers
             await _responseCacheService.RemoveCacheResponseAsync(keyCache);
             await _cart.BeginTransactionAsync();
             try
-            {
+            {              
                 // Thêm hóa đơn
                 await _cart.AddHoaDonAsync(hoaDon);
                 _logger.LogInformation("Thêm đơn hàng thành công");
@@ -134,7 +134,7 @@ namespace BookAPI.Controllers
                 _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", email);
                 // Trả về kết quả
                 var order = _mapper.Map<HoaDonModel>(hoaDon);
-                
+                await _cart.CommitTransactionAsync();
                 return Ok(new ApiResponse
                 {
                     Success = true,
@@ -243,6 +243,7 @@ namespace BookAPI.Controllers
 
                     _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", email);
                     var order = _mapper.Map<HoaDonModel>(hoaDon);
+                    await _cart.CommitTransactionAsync();
                     return Ok(order);
                 }
                 catch (Exception ex)
