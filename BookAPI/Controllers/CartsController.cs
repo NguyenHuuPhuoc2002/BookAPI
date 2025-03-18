@@ -35,7 +35,6 @@ namespace BookAPI.Controllers
         private readonly IVnPayService _vnPayService;
         private readonly IResponseCacheService _responseCacheService;
 
-    //    private static CheckoutModel _model { get; set; }
         public CartsController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService, ISachService sach,
                                 ILogger<CartsController> logger, IMapper mapper, IResponseCacheService responseCacheService)
         {
@@ -99,7 +98,6 @@ namespace BookAPI.Controllers
             await _cart.BeginTransactionAsync();
             try
             {
-                await _cart.CommitTransactionAsync();
                 // Thêm hóa đơn
                 await _cart.AddHoaDonAsync(hoaDon);
                 _logger.LogInformation("Thêm đơn hàng thành công");
@@ -214,7 +212,6 @@ namespace BookAPI.Controllers
                 await _cart.BeginTransactionAsync();
                 try
                 {
-                    await _cart.CommitTransactionAsync();
                     await _cart.AddHoaDonAsync(hoaDon);
                     _logger.LogInformation("Thêm đơn hàng thành công");
 
