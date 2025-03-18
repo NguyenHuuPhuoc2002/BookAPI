@@ -17,6 +17,9 @@ using EcommerceWeb.Services;
 using Azure;
 using System.Security.Claims;
 using Common.Exceptions;
+using Newtonsoft.Json;
+using BookAPI.Services;
+using Newtonsoft.Json.Linq;
 
 namespace BookAPI.Controllers
 {
@@ -30,10 +33,11 @@ namespace BookAPI.Controllers
         private readonly ISachService _sach;
         private readonly IMapper _mapper;
         private readonly IVnPayService _vnPayService;
+        private readonly IResponseCacheService _responseCacheService;
 
-        private static CheckoutModel _model { get; set; }
-        public CartsController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService,
-                                ILogger<CartsController> logger, ISachService sach, IMapper mapper)
+    //    private static CheckoutModel _model { get; set; }
+        public CartsController(IGioHangService cart, IGioHangChiTietService cartItem, IVnPayService vnPayService, ISachService sach,
+                                ILogger<CartsController> logger, IMapper mapper, IResponseCacheService responseCacheService)
         {
             _cart = cart;
             _cartItem = cartItem;
@@ -41,10 +45,23 @@ namespace BookAPI.Controllers
             _sach = sach;
             _mapper = mapper;
             _vnPayService = vnPayService;
+            _responseCacheService = responseCacheService;
         }
         [HttpGet("PaymentCallBack")]
-        public async Task<IActionResult> PaymentCallBack([FromQuery] string email)
+        public async Task<IActionResult> PaymentCallBack([FromQuery] string email, [FromQuery] string orderId)
         {
+            var keyCache = $"{email}:{orderId}";
+            var cachedData = await _responseCacheService.GetCacheResponseAsync(keyCache);
+
+            if (string.IsNullOrEmpty(cachedData))
+            {
+                return NotFound("Phiên thanh toán đã hết hạn !");
+            }
+
+            cachedData = JsonConvert.DeserializeObject<string>(cachedData);
+            // Chuyển chuỗi JSON thành object
+            var _model = JsonConvert.DeserializeObject<CheckoutModel>(cachedData);
+
             if (string.IsNullOrEmpty(email))
             {
                 return BadRequest(new ApiResponse { Success = false, Message = "Không tìm thấy email!" });
@@ -77,7 +94,8 @@ namespace BookAPI.Controllers
                 GhiChu = _model.GhiChu,
                 TongTien = cartItems.Sum(p => p.SoLuong * p.DonGia)
             };
-
+            // xóa thông tin đơn hàng ở redis
+            await _responseCacheService.RemoveCacheResponseAsync(keyCache);
             await _cart.BeginTransactionAsync();
             try
             {
@@ -118,7 +136,7 @@ namespace BookAPI.Controllers
                 _logger.LogInformation("Thanh toán cho khách hàng {maKh} thành công", email);
                 // Trả về kết quả
                 var order = _mapper.Map<HoaDonModel>(hoaDon);
-               
+                
                 return Ok(new ApiResponse
                 {
                     Success = true,
@@ -133,6 +151,8 @@ namespace BookAPI.Controllers
                 _logger.LogError("Xảy ra lỗi khi thanh toán đơn hàng cho khách hàng {maKh}", email);
                 throw new AppException("Thanh toán không thành công!");
             }
+
+            #endregion
         }
 
         [HttpPost("checkout")]
@@ -141,7 +161,7 @@ namespace BookAPI.Controllers
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (ModelState.IsValid)
-            {
+            {                
 
                 _logger.LogInformation("Nhận yêu cầu thanh toán đơn hàng của khách hàng {maKh}", email);
                 var cart = await _cart.GetCartByMaKhAsync(email);
@@ -156,7 +176,13 @@ namespace BookAPI.Controllers
                         Description = $"{model.HoTen} {model.SoDienThoai}",
                         FullName = model.HoTen,
                         OrderId = new Random().Next(1000, 10000),
+                        Email = email,
                     };
+                    //Lưu thông tin đơn hàng vào redis
+                    var cacheDataString = JsonConvert.SerializeObject(model);
+                    var keyCache = $"{email}:{vnPayModel.OrderId}";
+                    await _responseCacheService.SetCacheReponseAsync(keyCache, cacheDataString, TimeSpan.FromMinutes(15));
+
                     var paymentUrl = _vnPayService.CreatePaymentUrl(HttpContext, vnPayModel );
                     return Ok(new ApiResponse
                     {
